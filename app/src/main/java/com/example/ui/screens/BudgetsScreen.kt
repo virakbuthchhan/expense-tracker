@@ -52,6 +52,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.local.CategoryEntity
 import com.example.ui.components.BudgetCard
 import com.example.ui.components.CategoryIconHelper
+import com.example.ui.i18n.LocalAppStrings
 import com.example.ui.theme.Emerald500
 import com.example.ui.theme.ExpenseRed
 import com.example.ui.viewmodel.BudgetWithStatus
@@ -66,6 +67,7 @@ fun BudgetsScreen(
     val budgetsWithStatus by viewModel.budgetsWithStatus.collectAsStateWithLifecycle()
     val allCategories by viewModel.allCategories.collectAsStateWithLifecycle()
     val preferences by viewModel.userPreferences.collectAsStateWithLifecycle()
+    val strings = LocalAppStrings.current
 
     var showBudgetDialog by remember { mutableStateOf(false) }
     var selectedBudgetForEdit by remember { mutableStateOf<BudgetWithStatus?>(null) }
@@ -87,13 +89,13 @@ fun BudgetsScreen(
             item {
                 Column {
                     Text(
-                        text = "Monthly Budgets",
+                        text = strings.budgetsTitle,
                         style = MaterialTheme.typography.headlineLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground
                     )
                     Text(
-                        text = "Set category limits to keep your spending disciplined",
+                        text = strings.budgetsSubtitle,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -120,12 +122,12 @@ fun BudgetsScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "Total Monthly Limit",
+                                    text = strings.totalBudget,
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    text = "${(overallProgress * 100).toInt()}% Used",
+                                    text = "${(overallProgress * 100).toInt()}% ${strings.spent}",
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = if (totalSpentOnBudgets > totalBudget) ExpenseRed else Emerald500
@@ -177,14 +179,14 @@ fun BudgetsScreen(
                             )
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(
-                                text = "No budgets set for this month",
+                                text = strings.noBudgetsSet,
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = "Create a budget limit for dining, groceries, or shopping to track limits automatically.",
+                                text = strings.tapSetBudgetPrompt,
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(horizontal = 16.dp)
@@ -259,6 +261,7 @@ fun BudgetEditDialog(
     onSave: (Int, Double) -> Unit,
     onDelete: (Int) -> Unit
 ) {
+    val strings = LocalAppStrings.current
     var selectedCategoryId by remember {
         mutableStateOf(budgetToEdit?.categoryId ?: categories.firstOrNull()?.id ?: 1)
     }
@@ -286,7 +289,7 @@ fun BudgetEditDialog(
                     .padding(24.dp)
             ) {
                 Text(
-                    text = if (budgetToEdit != null) "Edit Category Budget" else "Set Monthly Budget",
+                    text = if (budgetToEdit != null) strings.editBudget else strings.setBudget,
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -295,7 +298,7 @@ fun BudgetEditDialog(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "Category",
+                    text = strings.category,
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -353,7 +356,7 @@ fun BudgetEditDialog(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "Monthly Spending Limit",
+                    text = strings.monthlyLimit,
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -394,17 +397,17 @@ fun BudgetEditDialog(
                 ) {
                     if (budgetToEdit != null) {
                         TextButton(onClick = { onDelete(budgetToEdit.budgetId) }) {
-                            Text("Delete", color = ExpenseRed)
+                            Text(strings.delete, color = ExpenseRed)
                         }
                     }
                     TextButton(onClick = onDismiss) {
-                        Text("Cancel")
+                        Text(strings.cancel)
                     }
                     Button(
                         onClick = {
                             val limit = limitText.toDoubleOrNull()
                             if (limit == null || limit <= 0) {
-                                errorText = "Please enter a valid amount"
+                                errorText = strings.validAmountError
                             } else {
                                 onSave(selectedCategoryId, limit)
                             }
@@ -412,7 +415,7 @@ fun BudgetEditDialog(
                         colors = ButtonDefaults.buttonColors(containerColor = Emerald500),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("Save", color = Color.White)
+                        Text(strings.saveBudget, color = Color.White)
                     }
                 }
             }

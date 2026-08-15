@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.Refresh
@@ -59,6 +60,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.ui.i18n.AppLanguage
+import com.example.ui.i18n.LocalAppStrings
 import com.example.ui.theme.Emerald500
 import com.example.ui.theme.ExpenseRed
 import com.example.ui.viewmodel.ExpenseViewModel
@@ -71,6 +74,7 @@ data class CurrencyOption(
 
 val availableCurrencies = listOf(
     CurrencyOption("USD", "US Dollar", "$"),
+    CurrencyOption("KHR", "Cambodian Riel", "៛"),
     CurrencyOption("EUR", "Euro", "€"),
     CurrencyOption("GBP", "British Pound", "£"),
     CurrencyOption("JPY", "Japanese Yen", "¥"),
@@ -79,8 +83,7 @@ val availableCurrencies = listOf(
     CurrencyOption("INR", "Indian Rupee", "₹"),
     CurrencyOption("CNY", "Chinese Yuan", "¥"),
     CurrencyOption("SGD", "Singapore Dollar", "$"),
-    CurrencyOption("CHF", "Swiss Franc", "Fr"),
-    CurrencyOption("KHR", "Cambodian Riel", "៛")
+    CurrencyOption("CHF", "Swiss Franc", "Fr")
 )
 
 @Composable
@@ -91,7 +94,10 @@ fun SettingsScreen(
     modifier: Modifier = Modifier
 ) {
     val preferences by viewModel.userPreferences.collectAsStateWithLifecycle()
+    val strings = LocalAppStrings.current
+    val currentLanguage = AppLanguage.fromCode(preferences.language)
 
+    var showLanguageDialog by remember { mutableStateOf(false) }
     var showCurrencyDialog by remember { mutableStateOf(false) }
     var showPinSetupDialog by remember { mutableStateOf(false) }
     var showResetConfirmDialog by remember { mutableStateOf(false) }
@@ -106,13 +112,13 @@ fun SettingsScreen(
         item {
             Column {
                 Text(
-                    text = "Settings",
+                    text = strings.settingsTitle,
                     style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
                 )
                 Text(
-                    text = "Preferences, security, and offline data management",
+                    text = strings.settingsSubtitle,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -122,11 +128,22 @@ fun SettingsScreen(
         // General Preferences Group
         item {
             Text(
-                text = "Preferences",
+                text = strings.preferencesGroup,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(top = 8.dp)
+            )
+        }
+
+        // Language Setting Card
+        item {
+            SettingsActionCard(
+                icon = Icons.Default.Language,
+                iconColor = Color(0xFF0D9488),
+                title = strings.language,
+                subtitle = "${currentLanguage.flag} ${currentLanguage.nativeName} (${currentLanguage.displayName})",
+                onClick = { showLanguageDialog = true }
             )
         }
 
@@ -135,7 +152,7 @@ fun SettingsScreen(
             SettingsActionCard(
                 icon = Icons.Default.AttachMoney,
                 iconColor = Emerald500,
-                title = "Base Currency",
+                title = strings.baseCurrency,
                 subtitle = "${preferences.currencyCode} (${preferences.currencySymbol})",
                 onClick = { showCurrencyDialog = true }
             )
@@ -146,8 +163,8 @@ fun SettingsScreen(
             SettingsActionCard(
                 icon = Icons.Default.Category,
                 iconColor = Color(0xFF3B82F6),
-                title = "Manage Categories",
-                subtitle = "Customize icon, colors, and category labels",
+                title = strings.manageCategories,
+                subtitle = strings.manageCategoriesSubtitle,
                 onClick = onNavigateToCategories
             )
         }
@@ -157,8 +174,8 @@ fun SettingsScreen(
             SettingsActionCard(
                 icon = Icons.Default.FileDownload,
                 iconColor = Color(0xFF8B5CF6),
-                title = "Export Data (CSV / JSON)",
-                subtitle = "Backup transactions to your device or share",
+                title = strings.exportDataAction,
+                subtitle = strings.exportDataSubtitle,
                 onClick = onNavigateToExport
             )
         }
@@ -166,7 +183,7 @@ fun SettingsScreen(
         // Security & App Lock Group
         item {
             Text(
-                text = "Security & Privacy",
+                text = strings.securityGroup,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
@@ -210,13 +227,13 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.width(14.dp))
                         Column {
                             Text(
-                                text = "App Lock (4-Digit PIN)",
+                                text = strings.appLock,
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = if (preferences.isAppLockEnabled) "PIN protection is active" else "Protect financial records with PIN",
+                                text = if (preferences.isAppLockEnabled) strings.pinActive else strings.pinInactive,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -244,7 +261,7 @@ fun SettingsScreen(
         // Data Management Group
         item {
             Text(
-                text = "Data Management",
+                text = strings.dataManagementGroup,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
@@ -257,10 +274,103 @@ fun SettingsScreen(
             SettingsActionCard(
                 icon = Icons.Default.Refresh,
                 iconColor = ExpenseRed,
-                title = "Reset All Transactions",
-                subtitle = "Clears all SQLite records and budgets",
+                title = strings.resetAllData,
+                subtitle = strings.resetAllSubtitle,
                 onClick = { showResetConfirmDialog = true }
             )
+        }
+    }
+
+    // Language Picker Dialog
+    if (showLanguageDialog) {
+        Dialog(onDismissRequest = { showLanguageDialog = false }) {
+            Card(
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp)
+                ) {
+                    Text(
+                        text = strings.selectLanguage,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        AppLanguage.entries.forEach { lang ->
+                            val isSelected = preferences.language.equals(lang.code, ignoreCase = true)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(
+                                        if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                                    )
+                                    .clickable {
+                                        viewModel.setLanguage(lang.code)
+                                        showLanguageDialog = false
+                                    }
+                                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = lang.flag,
+                                        style = MaterialTheme.typography.titleLarge
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Column {
+                                        Text(
+                                            text = lang.nativeName,
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            text = lang.displayName,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+
+                                RadioButton(
+                                    selected = isSelected,
+                                    onClick = {
+                                        viewModel.setLanguage(lang.code)
+                                        showLanguageDialog = false
+                                    },
+                                    colors = RadioButtonDefaults.colors(
+                                        selectedColor = MaterialTheme.colorScheme.primary
+                                    )
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        TextButton(onClick = { showLanguageDialog = false }) {
+                            Text(strings.cancel)
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -335,7 +445,7 @@ fun SettingsScreen(
                         horizontalArrangement = Arrangement.End
                     ) {
                         TextButton(onClick = { showCurrencyDialog = false }) {
-                            Text("Cancel")
+                            Text(strings.cancel)
                         }
                     }
                 }
@@ -363,7 +473,7 @@ fun SettingsScreen(
                         .padding(24.dp)
                 ) {
                     Text(
-                        text = "Set 4-Digit Security PIN",
+                        text = strings.setPinTitle,
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -376,7 +486,7 @@ fun SettingsScreen(
                         onValueChange = {
                             if (it.length <= 4 && it.all { c -> c.isDigit() }) pin = it
                         },
-                        label = { Text("Enter 4 digits") },
+                        label = { Text(strings.enterPin) },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                         visualTransformation = PasswordVisualTransformation(),
@@ -391,7 +501,7 @@ fun SettingsScreen(
                         onValueChange = {
                             if (it.length <= 4 && it.all { c -> c.isDigit() }) confirmPin = it
                         },
-                        label = { Text("Confirm 4 digits") },
+                        label = { Text(strings.confirmPin) },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                         visualTransformation = PasswordVisualTransformation(),
@@ -415,14 +525,14 @@ fun SettingsScreen(
                         horizontalArrangement = Arrangement.End
                     ) {
                         TextButton(onClick = { showPinSetupDialog = false }) {
-                            Text("Cancel")
+                            Text(strings.cancel)
                         }
                         Button(
                             onClick = {
                                 if (pin.length != 4) {
-                                    pinError = "PIN must be exactly 4 digits"
+                                    pinError = "PIN must be 4 digits"
                                 } else if (pin != confirmPin) {
-                                    pinError = "PINs do not match"
+                                    pinError = strings.pinMismatch
                                 } else {
                                     viewModel.setAppLock(true, pin)
                                     showPinSetupDialog = false
@@ -431,7 +541,7 @@ fun SettingsScreen(
                             colors = ButtonDefaults.buttonColors(containerColor = Emerald500),
                             shape = RoundedCornerShape(12.dp)
                         ) {
-                            Text("Save PIN", color = Color.White)
+                            Text(strings.savePin, color = Color.White)
                         }
                     }
                 }
@@ -443,8 +553,8 @@ fun SettingsScreen(
     if (showResetConfirmDialog) {
         AlertDialog(
             onDismissRequest = { showResetConfirmDialog = false },
-            title = { Text("Reset All Data?") },
-            text = { Text("This will permanently remove all transactions and custom budgets from your offline SQLite storage.") },
+            title = { Text(strings.resetConfirmTitle) },
+            text = { Text(strings.resetConfirmMessage) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -454,12 +564,12 @@ fun SettingsScreen(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = ExpenseRed)
                 ) {
-                    Text("Reset All", color = Color.White)
+                    Text(strings.confirmReset, color = Color.White)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showResetConfirmDialog = false }) {
-                    Text("Cancel")
+                    Text(strings.cancel)
                 }
             }
         )

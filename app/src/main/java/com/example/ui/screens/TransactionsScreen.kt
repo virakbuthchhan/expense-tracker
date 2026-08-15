@@ -60,6 +60,7 @@ import com.example.data.local.CategoryEntity
 import com.example.data.local.TransactionWithCategory
 import com.example.ui.components.CategoryIconHelper
 import com.example.ui.components.TransactionItemCard
+import com.example.ui.i18n.LocalAppStrings
 import com.example.ui.theme.Emerald400
 import com.example.ui.theme.Emerald500
 import com.example.ui.theme.ExpenseRed
@@ -81,6 +82,7 @@ fun TransactionsScreen(
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val selectedTypeFilter by viewModel.selectedTypeFilter.collectAsStateWithLifecycle()
     val selectedCategoryFilter by viewModel.selectedCategoryFilter.collectAsStateWithLifecycle()
+    val strings = LocalAppStrings.current
 
     Box(
         modifier = modifier
@@ -96,7 +98,7 @@ fun TransactionsScreen(
 
             // Title
             Text(
-                text = "Transactions",
+                text = strings.transactionsTitle,
                 style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground
@@ -108,7 +110,7 @@ fun TransactionsScreen(
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { viewModel.setSearchQuery(it) },
-                placeholder = { Text("Search note, merchant, category...") },
+                placeholder = { Text(strings.searchPlaceholder) },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.Search,
@@ -151,7 +153,11 @@ fun TransactionsScreen(
                     .padding(4.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                val filters = listOf("all" to "All", "expense" to "Expenses", "income" to "Income")
+                val filters = listOf(
+                    "all" to strings.filterAll,
+                    "expense" to strings.filterExpense,
+                    "income" to strings.filterIncome
+                )
                 filters.forEach { (key, label) ->
                     val isSelected = selectedTypeFilter == key
                     Box(
@@ -197,7 +203,7 @@ fun TransactionsScreen(
                             .padding(horizontal = 14.dp, vertical = 6.dp)
                     ) {
                         Text(
-                            text = "All Categories",
+                            text = strings.filterAll,
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = if (isAll) FontWeight.Bold else FontWeight.Medium,
                             color = if (isAll) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
@@ -266,14 +272,14 @@ fun TransactionsScreen(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "No matching transactions found",
+                            text = strings.noTransactionsFound,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = "Try adjusting filters or tap + to log your first transaction",
+                            text = strings.tryDifferentFilter,
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

@@ -46,6 +46,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.local.CategorySpend
+import com.example.ui.i18n.LocalAppStrings
 import com.example.ui.theme.Emerald400
 import com.example.ui.theme.Emerald500
 import com.example.ui.theme.ExpenseRed
@@ -59,6 +60,7 @@ fun CategoryDonutChart(
     currencySymbol: String,
     modifier: Modifier = Modifier
 ) {
+    val strings = LocalAppStrings.current
     val totalSpending = remember(spendingList) { spendingList.sumOf { it.totalAmount } }
     var selectedIndex by remember { mutableStateOf<Int?>(null) }
     val animatedProgress = remember { Animatable(0f) }
@@ -86,7 +88,7 @@ fun CategoryDonutChart(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Spending by Category",
+                text = strings.categoryBreakdown,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -103,7 +105,7 @@ fun CategoryDonutChart(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "No expense data for this period",
+                        text = strings.noAnalyticsData,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -207,7 +209,7 @@ fun CategoryDonutChart(
                             )
                         } else {
                             Text(
-                                text = "Total Spent",
+                                text = strings.totalSpent,
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -300,6 +302,7 @@ fun SpendingTrendBarChart(
     currencySymbol: String,
     modifier: Modifier = Modifier
 ) {
+    val strings = LocalAppStrings.current
     val maxSpend = remember(points) {
         (points.maxOfOrNull { it.expenseAmount } ?: 100.0).coerceAtLeast(50.0)
     }
@@ -334,13 +337,13 @@ fun SpendingTrendBarChart(
             ) {
                 Column {
                     Text(
-                        text = "Daily Spending Trend",
+                        text = strings.dailySpendingTrend,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Spending activity across the month",
+                        text = strings.spendingTrend,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -368,7 +371,7 @@ fun SpendingTrendBarChart(
                         .height(140.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("No trend data available", style = MaterialTheme.typography.bodyMedium)
+                    Text(strings.noAnalyticsData, style = MaterialTheme.typography.bodyMedium)
                 }
             } else {
                 Box(
@@ -459,6 +462,7 @@ fun IncomeVsExpenseComparisonCard(
     currencySymbol: String,
     modifier: Modifier = Modifier
 ) {
+    val strings = LocalAppStrings.current
     val total = (totalIncome + totalExpense).coerceAtLeast(1.0)
     val incomePct = (totalIncome / total * 100).toInt()
     val expensePct = (totalExpense / total * 100).toInt()
@@ -478,7 +482,7 @@ fun IncomeVsExpenseComparisonCard(
                 .padding(20.dp)
         ) {
             Text(
-                text = "Income vs Expenses",
+                text = strings.cashFlowSummary,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
@@ -523,7 +527,7 @@ fun IncomeVsExpenseComparisonCard(
                         Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(IncomeGreen))
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "Income ($incomePct%)",
+                            text = "${strings.monthlyIncome} ($incomePct%)",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -542,7 +546,7 @@ fun IncomeVsExpenseComparisonCard(
                         Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(ExpenseRed))
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "Expenses ($expensePct%)",
+                            text = "${strings.monthlyExpense} ($expensePct%)",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -573,7 +577,7 @@ fun IncomeVsExpenseComparisonCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = if (netSavings >= 0) "Net Savings" else "Net Loss",
+                        text = strings.netSavings,
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.SemiBold
                     )

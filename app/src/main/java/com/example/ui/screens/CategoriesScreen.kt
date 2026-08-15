@@ -51,6 +51,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.local.CategoryEntity
 import com.example.ui.components.CategoryIconHelper
+import com.example.ui.i18n.LocalAppStrings
 import com.example.ui.theme.CategoryColors
 import com.example.ui.theme.Emerald500
 import com.example.ui.theme.ExpenseRed
@@ -63,6 +64,7 @@ fun CategoriesScreen(
     modifier: Modifier = Modifier
 ) {
     val allCategories by viewModel.allCategories.collectAsStateWithLifecycle()
+    val strings = LocalAppStrings.current
     var showAddCategoryDialog by remember { mutableStateOf(false) }
 
     val expenseCategories = allCategories.filter { it.type == "expense" || it.type == "both" }
@@ -81,13 +83,13 @@ fun CategoriesScreen(
             item {
                 Column {
                     Text(
-                        text = "Categories",
+                        text = strings.categoriesTitle,
                         style = MaterialTheme.typography.headlineLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground
                     )
                     Text(
-                        text = "Manage your default and custom budget categories",
+                        text = strings.categoriesSubtitle,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -97,7 +99,7 @@ fun CategoriesScreen(
             // Expense Categories Section
             item {
                 Text(
-                    text = "Expense Categories (${expenseCategories.size})",
+                    text = "${strings.expenseCategories} (${expenseCategories.size})",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -108,6 +110,9 @@ fun CategoriesScreen(
             items(expenseCategories) { cat ->
                 CategoryRowItem(
                     category = cat,
+                    defaultLabel = strings.defaultCategoryBadge,
+                    customLabel = strings.customCategoryBadge,
+                    deleteContentDesc = strings.delete,
                     onDelete = { viewModel.deleteCategory(cat) }
                 )
             }
@@ -115,7 +120,7 @@ fun CategoriesScreen(
             // Income Categories Section
             item {
                 Text(
-                    text = "Income Categories (${incomeCategories.size})",
+                    text = "${strings.incomeCategories} (${incomeCategories.size})",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = IncomeGreen,
@@ -126,6 +131,9 @@ fun CategoriesScreen(
             items(incomeCategories) { cat ->
                 CategoryRowItem(
                     category = cat,
+                    defaultLabel = strings.defaultCategoryBadge,
+                    customLabel = strings.customCategoryBadge,
+                    deleteContentDesc = strings.delete,
                     onDelete = { viewModel.deleteCategory(cat) }
                 )
             }
@@ -144,7 +152,7 @@ fun CategoriesScreen(
         ) {
             Icon(
                 imageVector = Icons.Default.Add,
-                contentDescription = "New Category",
+                contentDescription = strings.addNewCategory,
                 modifier = Modifier.size(28.dp)
             )
         }
@@ -164,6 +172,9 @@ fun CategoriesScreen(
 @Composable
 fun CategoryRowItem(
     category: CategoryEntity,
+    defaultLabel: String = "Default",
+    customLabel: String = "Custom",
+    deleteContentDesc: String = "Delete",
     onDelete: () -> Unit
 ) {
     val catColor = try {
@@ -209,7 +220,7 @@ fun CategoryRowItem(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = if (category.isDefault) "Default Category" else "Custom Category",
+                        text = if (category.isDefault) defaultLabel else customLabel,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -220,7 +231,7 @@ fun CategoryRowItem(
                 IconButton(onClick = onDelete) {
                     Icon(
                         imageVector = Icons.Default.Delete,
-                        contentDescription = "Delete",
+                        contentDescription = deleteContentDesc,
                         tint = ExpenseRed
                     )
                 }
@@ -235,6 +246,7 @@ fun AddCategoryDialog(
     onDismiss: () -> Unit,
     onSave: (String, String, String, String) -> Unit
 ) {
+    val strings = LocalAppStrings.current
     var name by remember { mutableStateOf("") }
     var selectedIcon by remember { mutableStateOf(CategoryIconHelper.availableIcons.first().first) }
     var selectedColor by remember { mutableStateOf(CategoryColors.first()) }
@@ -265,7 +277,7 @@ fun AddCategoryDialog(
                     .padding(24.dp)
             ) {
                 Text(
-                    text = "Create Custom Category",
+                    text = strings.addNewCategory,
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
@@ -281,7 +293,7 @@ fun AddCategoryDialog(
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                         .padding(4.dp)
                 ) {
-                    listOf("expense" to "Expense", "income" to "Income").forEach { (t, label) ->
+                    listOf("expense" to strings.filterExpense, "income" to strings.filterIncome).forEach { (t, label) ->
                         val isSel = type == t
                         Box(
                             modifier = Modifier
@@ -310,7 +322,7 @@ fun AddCategoryDialog(
                         name = it
                         errorText = null
                     },
-                    placeholder = { Text("Category name (e.g. Subscriptions)") },
+                    placeholder = { Text(strings.categoryNamePlaceholder) },
                     singleLine = true,
                     shape = RoundedCornerShape(14.dp),
                     modifier = Modifier.fillMaxWidth()
@@ -328,7 +340,7 @@ fun AddCategoryDialog(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "Choose Icon",
+                    text = strings.icon,
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -369,7 +381,7 @@ fun AddCategoryDialog(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "Choose Color",
+                    text = strings.color,
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -406,12 +418,12 @@ fun AddCategoryDialog(
                     horizontalArrangement = Arrangement.End
                 ) {
                     TextButton(onClick = onDismiss) {
-                        Text("Cancel")
+                        Text(strings.cancel)
                     }
                     Button(
                         onClick = {
                             if (name.trim().isBlank()) {
-                                errorText = "Please enter a category name"
+                                errorText = strings.categoryNamePlaceholder
                             } else {
                                 onSave(name.trim(), selectedIcon, colorToHex(selectedColor), type)
                             }
@@ -419,7 +431,7 @@ fun AddCategoryDialog(
                         colors = ButtonDefaults.buttonColors(containerColor = Emerald500),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("Create", color = Color.White)
+                        Text(strings.saveCategory, color = Color.White)
                     }
                 }
             }

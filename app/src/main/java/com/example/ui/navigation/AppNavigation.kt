@@ -53,6 +53,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.data.local.TransactionWithCategory
 import com.example.ui.components.AppLockOverlay
+import com.example.ui.i18n.AppStrings
+import com.example.ui.i18n.LocalAppStrings
 import com.example.ui.screens.AddCategoryDialog
 import com.example.ui.screens.AddEditTransactionSheet
 import com.example.ui.screens.AnalyticsScreen
@@ -66,14 +68,26 @@ import com.example.ui.theme.Emerald400
 import com.example.ui.theme.Emerald500
 import com.example.ui.viewmodel.ExpenseViewModel
 
-sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
-    object Dashboard : Screen("dashboard", "Home", Icons.Default.Dashboard)
-    object Transactions : Screen("transactions", "History", Icons.Default.ReceiptLong)
-    object Analytics : Screen("analytics", "Analytics", Icons.Default.PieChart)
-    object Budgets : Screen("budgets", "Budgets", Icons.Default.Savings)
-    object Settings : Screen("settings", "Settings", Icons.Default.Settings)
-    object Categories : Screen("categories", "Categories", Icons.Default.Category)
-    object Export : Screen("export", "Export", Icons.Default.FileDownload)
+sealed class Screen(val route: String, val icon: ImageVector) {
+    object Dashboard : Screen("dashboard", Icons.Default.Dashboard)
+    object Transactions : Screen("transactions", Icons.Default.ReceiptLong)
+    object Analytics : Screen("analytics", Icons.Default.PieChart)
+    object Budgets : Screen("budgets", Icons.Default.Savings)
+    object Settings : Screen("settings", Icons.Default.Settings)
+    object Categories : Screen("categories", Icons.Default.Category)
+    object Export : Screen("export", Icons.Default.FileDownload)
+}
+
+fun Screen.getTitle(strings: AppStrings): String {
+    return when (this) {
+        Screen.Dashboard -> strings.navHome
+        Screen.Transactions -> strings.navHistory
+        Screen.Analytics -> strings.navAnalytics
+        Screen.Budgets -> strings.navBudgets
+        Screen.Settings -> strings.navSettings
+        Screen.Categories -> strings.navCategories
+        Screen.Export -> strings.navExport
+    }
 }
 
 val bottomNavScreens = listOf(
@@ -93,6 +107,7 @@ fun AppNavigation(
     val navController = rememberNavController()
     val isAppLocked by viewModel.isAppLocked.collectAsStateWithLifecycle()
     val preferences by viewModel.userPreferences.collectAsStateWithLifecycle()
+    val strings = LocalAppStrings.current
 
     var activeTransactionToEdit by remember { mutableStateOf<TransactionWithCategory?>(null) }
     var showAddTransactionSheet by remember { mutableStateOf(false) }
@@ -111,8 +126,8 @@ fun AppNavigation(
                         title = {
                             Text(
                                 text = when (currentRoute) {
-                                    Screen.Categories.route -> "Categories"
-                                    Screen.Export.route -> "Data Export"
+                                    Screen.Categories.route -> strings.categoriesTitle
+                                    Screen.Export.route -> strings.exportTitle
                                     else -> ""
                                 },
                                 fontWeight = FontWeight.Bold
@@ -144,17 +159,18 @@ fun AppNavigation(
                     ) {
                         bottomNavScreens.forEach { screen ->
                             val isSelected = currentRoute == screen.route
+                            val title = screen.getTitle(strings)
                             NavigationBarItem(
                                 icon = {
                                     Icon(
                                         imageVector = screen.icon,
-                                        contentDescription = screen.title,
+                                        contentDescription = title,
                                         modifier = Modifier.size(24.dp)
                                     )
                                 },
                                 label = {
                                     Text(
-                                        text = screen.title,
+                                        text = title,
                                         style = MaterialTheme.typography.labelSmall,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                                     )

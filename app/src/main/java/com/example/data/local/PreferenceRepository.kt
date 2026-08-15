@@ -12,7 +12,8 @@ data class UserPreferences(
     val isDarkMode: Boolean = false,
     val isFollowSystemTheme: Boolean = true,
     val isAppLockEnabled: Boolean = false,
-    val appLockPin: String = ""
+    val appLockPin: String = "",
+    val language: String = "en"
 )
 
 class PreferenceRepository(context: Context) {
@@ -29,8 +30,16 @@ class PreferenceRepository(context: Context) {
             isDarkMode = prefs.getBoolean("is_dark_mode", false),
             isFollowSystemTheme = prefs.getBoolean("follow_system_theme", true),
             isAppLockEnabled = prefs.getBoolean("is_app_lock_enabled", false),
-            appLockPin = prefs.getString("app_lock_pin", "") ?: ""
+            appLockPin = prefs.getString("app_lock_pin", "") ?: "",
+            language = prefs.getString("app_language", "en") ?: "en"
         )
+    }
+
+    fun setLanguage(language: String) {
+        prefs.edit()
+            .putString("app_language", language)
+            .apply()
+        _userPreferences.value = loadPreferences()
     }
 
     fun setCurrency(code: String, symbol: String) {

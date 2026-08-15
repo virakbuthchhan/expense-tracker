@@ -41,6 +41,7 @@ import com.example.ui.components.CategoryDonutChart
 import com.example.ui.components.CategoryIconHelper
 import com.example.ui.components.IncomeVsExpenseComparisonCard
 import com.example.ui.components.SpendingTrendBarChart
+import com.example.ui.i18n.LocalAppStrings
 import com.example.ui.theme.Emerald500
 import com.example.ui.theme.ExpenseRed
 import com.example.ui.theme.IncomeGreen
@@ -58,6 +59,7 @@ fun AnalyticsScreen(
     val metrics by viewModel.dashboardMetrics.collectAsStateWithLifecycle()
     val preferences by viewModel.userPreferences.collectAsStateWithLifecycle()
     val selectedMonth by viewModel.selectedMonth.collectAsStateWithLifecycle()
+    val strings = LocalAppStrings.current
 
     val monthCal = Calendar.getInstance().apply {
         try {
@@ -89,13 +91,13 @@ fun AnalyticsScreen(
         item {
             Column {
                 Text(
-                    text = "Reports & Analytics",
+                    text = strings.analyticsTitle,
                     style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
                 )
                 Text(
-                    text = "Gain deep insights into your spending habits",
+                    text = strings.analyticsSubtitle,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -186,7 +188,7 @@ fun AnalyticsScreen(
                             .padding(20.dp)
                     ) {
                         Text(
-                            text = "Category Ranking",
+                            text = strings.topCategories,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -237,7 +239,7 @@ fun AnalyticsScreen(
                                                 color = MaterialTheme.colorScheme.onSurface
                                             )
                                             Text(
-                                                text = "${cat.transactionCount} transactions",
+                                                text = "${cat.transactionCount} ${strings.transactionsTitle.lowercase()}",
                                                 style = MaterialTheme.typography.labelSmall,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )

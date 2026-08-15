@@ -43,6 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.ui.i18n.LocalAppStrings
 import com.example.ui.theme.Emerald400
 import com.example.ui.theme.ExpenseRed
 import com.example.ui.theme.Slate900
@@ -56,6 +57,7 @@ fun AppLockOverlay(
     onUnlocked: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val strings = LocalAppStrings.current
     var enteredPin by remember { mutableStateOf("") }
     var hasError by remember { mutableStateOf(false) }
     val shakeOffset = remember { Animatable(0f) }
@@ -125,7 +127,7 @@ fun AppLockOverlay(
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = "Expense Tracker Locked",
+                text = strings.unlockExpenseTracker,
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
@@ -134,7 +136,7 @@ fun AppLockOverlay(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = if (hasError) "Incorrect PIN, please try again" else "Enter your 4-digit security PIN",
+                text = if (hasError) strings.incorrectPin else strings.enterSecurityPin,
                 style = MaterialTheme.typography.bodyMedium,
                 color = if (hasError) ExpenseRed else Color.White.copy(alpha = 0.7f)
             )

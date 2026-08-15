@@ -71,6 +71,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.local.CategoryEntity
 import com.example.data.local.TransactionWithCategory
 import com.example.ui.components.CategoryIconHelper
+import com.example.ui.i18n.LocalAppStrings
 import com.example.ui.theme.Emerald400
 import com.example.ui.theme.Emerald500
 import com.example.ui.theme.ExpenseRed
@@ -93,6 +94,7 @@ fun AddEditTransactionSheet(
 ) {
     val allCategories by viewModel.allCategories.collectAsStateWithLifecycle()
     val preferences by viewModel.userPreferences.collectAsStateWithLifecycle()
+    val strings = LocalAppStrings.current
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
@@ -143,7 +145,7 @@ fun AddEditTransactionSheet(
     fun handleSave() {
         val cleanAmount = amountText.trim().toDoubleOrNull()
         if (cleanAmount == null || cleanAmount <= 0.0) {
-            errorMessage = "Please enter a valid amount"
+            errorMessage = strings.validAmountError
             return
         }
         if (selectedCategoryId == 0 && filteredCategories.isNotEmpty()) {
@@ -192,13 +194,13 @@ fun AddEditTransactionSheet(
                         IconButton(onClick = onDismiss) {
                             Icon(
                                 imageVector = Icons.Default.Close,
-                                contentDescription = "Close",
+                                contentDescription = strings.cancel,
                                 tint = MaterialTheme.colorScheme.onBackground
                             )
                         }
 
                         Text(
-                            text = if (transactionToEdit != null) "Edit Transaction" else "New Transaction",
+                            text = if (transactionToEdit != null) strings.editTransaction else strings.newTransaction,
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onBackground
@@ -213,7 +215,7 @@ fun AddEditTransactionSheet(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Delete,
-                                    contentDescription = "Delete",
+                                    contentDescription = strings.delete,
                                     tint = ExpenseRed
                                 )
                             }
@@ -248,7 +250,7 @@ fun AddEditTransactionSheet(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "Expense",
+                                text = strings.filterExpense,
                                 style = MaterialTheme.typography.labelLarge,
                                 fontWeight = FontWeight.Bold,
                                 color = if (type == "expense") Color.White else MaterialTheme.colorScheme.onSurfaceVariant
@@ -270,7 +272,7 @@ fun AddEditTransactionSheet(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "Income",
+                                text = strings.filterIncome,
                                 style = MaterialTheme.typography.labelLarge,
                                 fontWeight = FontWeight.Bold,
                                 color = if (type == "income") Color.White else MaterialTheme.colorScheme.onSurfaceVariant
@@ -294,7 +296,7 @@ fun AddEditTransactionSheet(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = "AMOUNT (${preferences.currencyCode})",
+                                text = "${strings.amount.uppercase()} (${preferences.currencyCode})",
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -366,7 +368,7 @@ fun AddEditTransactionSheet(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Category",
+                            text = strings.category,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onBackground
@@ -378,7 +380,7 @@ fun AddEditTransactionSheet(
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("New Category")
+                            Text(strings.addNewCategory)
                         }
                     }
 
@@ -443,7 +445,7 @@ fun AddEditTransactionSheet(
 
                     // Date & Quick Pickers (Today, Yesterday, Custom)
                     Text(
-                        text = "Date",
+                        text = strings.date,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground
@@ -483,7 +485,7 @@ fun AddEditTransactionSheet(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                "Today",
+                                strings.filterToday,
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
                                 color = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
@@ -512,7 +514,7 @@ fun AddEditTransactionSheet(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                "Yesterday",
+                                strings.filterYesterday,
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = if (isYesterday) FontWeight.Bold else FontWeight.Normal,
                                 color = if (isYesterday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
@@ -559,7 +561,7 @@ fun AddEditTransactionSheet(
 
                     // Note / Merchant Input Field
                     Text(
-                        text = "Note & Merchant",
+                        text = strings.noteOptional,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground
@@ -570,7 +572,7 @@ fun AddEditTransactionSheet(
                     OutlinedTextField(
                         value = note,
                         onValueChange = { note = it },
-                        placeholder = { Text("e.g. Whole Foods Groceries, Uber ride...") },
+                        placeholder = { Text(strings.notePlaceholder) },
                         shape = RoundedCornerShape(16.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedContainerColor = MaterialTheme.colorScheme.surface,
@@ -598,7 +600,7 @@ fun AddEditTransactionSheet(
                             .testTag("save_transaction_button")
                     ) {
                         Text(
-                            text = if (transactionToEdit != null) "Update Transaction" else "Save Transaction",
+                            text = if (transactionToEdit != null) strings.updateTransaction else strings.saveTransaction,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = Color.White

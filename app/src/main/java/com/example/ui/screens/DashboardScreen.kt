@@ -47,6 +47,7 @@ import com.example.ui.components.CategoryIconHelper
 import com.example.ui.components.HeroBalanceCard
 import com.example.ui.components.SpendingTrendBarChart
 import com.example.ui.components.TransactionItemCard
+import com.example.ui.i18n.LocalAppStrings
 import com.example.ui.theme.BudgetWarning
 import com.example.ui.theme.Emerald400
 import com.example.ui.theme.Emerald500
@@ -69,6 +70,7 @@ fun DashboardScreen(
     val metrics by viewModel.dashboardMetrics.collectAsStateWithLifecycle()
     val preferences by viewModel.userPreferences.collectAsStateWithLifecycle()
     val selectedMonth by viewModel.selectedMonth.collectAsStateWithLifecycle()
+    val strings = LocalAppStrings.current
 
     val monthName = try {
         val sdf = SimpleDateFormat("yyyy-MM", Locale.getDefault())
@@ -98,13 +100,13 @@ fun DashboardScreen(
                 ) {
                     Column {
                         Text(
-                            text = "Dashboard",
+                            text = strings.financialOverview,
                             style = MaterialTheme.typography.headlineLarge,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onBackground
                         )
                         Text(
-                            text = "100% Local & Private",
+                            text = strings.offlineSecure,
                             style = MaterialTheme.typography.bodySmall,
                             color = Emerald500,
                             fontWeight = FontWeight.Medium
@@ -177,13 +179,13 @@ fun DashboardScreen(
                             Spacer(modifier = Modifier.width(12.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = if (isOver) "${alert.categoryName} Budget Exceeded!" else "${alert.categoryName} near budget limit",
+                                    text = if (isOver) "${alert.categoryName} - ${strings.overBudget}" else "${alert.categoryName} - ${strings.budgetAlert}",
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = if (isOver) ExpenseRed else BudgetWarning
                                 )
                                 Text(
-                                    text = "${preferences.currencySymbol}${String.format(Locale.US, "%,.2f", alert.spentAmount)} of ${preferences.currencySymbol}${String.format(Locale.US, "%,.2f", alert.monthlyLimit)} spent (${(alert.spentAmount / alert.monthlyLimit * 100).toInt()}%)",
+                                    text = "${preferences.currencySymbol}${String.format(Locale.US, "%,.2f", alert.spentAmount)} ${strings.of} ${preferences.currencySymbol}${String.format(Locale.US, "%,.2f", alert.monthlyLimit)} ${strings.spent.lowercase()} (${(alert.spentAmount / alert.monthlyLimit * 100).toInt()}%)",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
@@ -209,13 +211,13 @@ fun DashboardScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Top Spending",
+                                text = strings.topCategories,
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onBackground
                             )
                             TextButton(onClick = onNavigateToAnalytics) {
-                                Text("View Analytics", color = MaterialTheme.colorScheme.primary)
+                                Text(strings.viewAll, color = MaterialTheme.colorScheme.primary)
                             }
                         }
 
@@ -289,13 +291,13 @@ fun DashboardScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Recent Transactions",
+                        text = strings.recentTransactions,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground
                     )
                     TextButton(onClick = onNavigateToTransactions) {
-                        Text("See All", color = MaterialTheme.colorScheme.primary)
+                        Text(strings.viewAll, color = MaterialTheme.colorScheme.primary)
                     }
                 }
             }
@@ -317,9 +319,15 @@ fun DashboardScreen(
                             )
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
-                                text = "No transactions recorded yet",
+                                text = strings.noTransactionsYet,
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = strings.tapPlusToRecord,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                             )
                         }
                     }

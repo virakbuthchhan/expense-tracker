@@ -41,6 +41,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.local.TransactionWithCategory
+import com.example.ui.i18n.LocalAppStrings
 import com.example.ui.theme.BudgetWarning
 import com.example.ui.theme.Emerald400
 import com.example.ui.theme.Emerald500
@@ -63,6 +64,7 @@ fun HeroBalanceCard(
     modifier: Modifier = Modifier
 ) {
     val isPositive = totalBalance >= 0
+    val strings = LocalAppStrings.current
 
     Card(
         shape = RoundedCornerShape(24.dp),
@@ -104,7 +106,7 @@ fun HeroBalanceCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Total Net Balance",
+                    text = strings.totalBalance,
                     style = MaterialTheme.typography.labelMedium,
                     color = Color.White.copy(alpha = 0.7f)
                 )
@@ -119,7 +121,7 @@ fun HeroBalanceCard(
                         .padding(horizontal = 10.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        text = if (isPositive) "Active Savings" else "Deficit",
+                        text = if (isPositive) strings.savingsRate else strings.overBudget,
                         style = MaterialTheme.typography.labelSmall,
                         color = if (isPositive) Emerald400 else ExpenseRed,
                         fontWeight = FontWeight.SemiBold
@@ -169,7 +171,7 @@ fun HeroBalanceCard(
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
                             Text(
-                                text = "Income",
+                                text = strings.monthlyIncome,
                                 style = MaterialTheme.typography.labelSmall,
                                 color = Color.White.copy(alpha = 0.6f)
                             )
@@ -209,7 +211,7 @@ fun HeroBalanceCard(
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
                             Text(
-                                text = "Expenses",
+                                text = strings.monthlyExpense,
                                 style = MaterialTheme.typography.labelSmall,
                                 color = Color.White.copy(alpha = 0.6f)
                             )
@@ -334,6 +336,7 @@ fun BudgetCard(
     onEditClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val strings = LocalAppStrings.current
     val categoryColor = try {
         Color(android.graphics.Color.parseColor(categoryColorHex))
     } catch (e: Exception) {
@@ -395,7 +398,7 @@ fun BudgetCard(
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = if (isOverBudget) "Over by $currencySymbol${String.format(Locale.US, "%,.2f", spentAmount - limitAmount)}" else "$currencySymbol${String.format(Locale.US, "%,.2f", remaining)} left",
+                            text = if (isOverBudget) "${strings.overBudget}: $currencySymbol${String.format(Locale.US, "%,.2f", spentAmount - limitAmount)}" else "$currencySymbol${String.format(Locale.US, "%,.2f", remaining)} ${strings.remaining}",
                             style = MaterialTheme.typography.bodySmall,
                             color = if (isOverBudget) ExpenseRed else MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -430,12 +433,12 @@ fun BudgetCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "$currencySymbol${String.format(Locale.US, "%,.0f", spentAmount)} spent",
+                    text = "$currencySymbol${String.format(Locale.US, "%,.0f", spentAmount)} ${strings.spent}",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = "Limit: $currencySymbol${String.format(Locale.US, "%,.0f", limitAmount)}",
+                    text = "${strings.monthlyLimit}: $currencySymbol${String.format(Locale.US, "%,.0f", limitAmount)}",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontWeight = FontWeight.Medium

@@ -360,6 +360,10 @@ class ExpenseViewModel(application: Application) : AndroidViewModel(application)
         preferenceRepository.setCurrency(code, symbol)
     }
 
+    fun setLanguage(languageCode: String) {
+        preferenceRepository.setLanguage(languageCode)
+    }
+
     fun setThemePreference(isDark: Boolean, followSystem: Boolean) {
         preferenceRepository.setThemePreference(isDark, followSystem)
     }
@@ -384,6 +388,49 @@ class ExpenseViewModel(application: Application) : AndroidViewModel(application)
 
     fun generateJsonExport(): String {
         return repository.generateJsonExport(allTransactions.value)
+    }
+
+    fun exportPdfToStorageUri(
+        context: android.content.Context,
+        targetUri: android.net.Uri,
+        appStrings: com.example.ui.i18n.AppStrings,
+        onResult: (Boolean) -> Unit
+    ) {
+        viewModelScope.launch {
+            val prefs = userPreferences.value
+            val success = com.example.data.service.PdfExportService.exportToStorageUri(
+                context = context,
+                targetUri = targetUri,
+                transactions = allTransactions.value,
+                currencyCode = prefs.currencyCode,
+                currencySymbol = prefs.currencySymbol,
+                appStrings = appStrings
+            )
+            onResult(success)
+        }
+    }
+
+    fun preparePdfForSharing(
+        context: android.content.Context,
+        appStrings: com.example.ui.i18n.AppStrings,
+        onReady: (android.net.Uri?) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val prefs = userPreferences.value
+                val uri = com.example.data.service.PdfExportService.savePdfToCacheFile(
+                    context = context,
+                    transactions = allTransactions.value,
+                    currencyCode = prefs.currencyCode,
+                    currencySymbol = prefs.currencySymbol,
+                    appStrings = appStrings
+                )
+                onReady(uri)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                onReady(null)
+            }
+        }
     }
 
     companion object {
