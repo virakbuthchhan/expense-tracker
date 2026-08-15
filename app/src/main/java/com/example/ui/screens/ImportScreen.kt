@@ -6,6 +6,7 @@ import android.content.Context
 import android.net.Uri
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -104,6 +105,9 @@ import com.example.data.service.ImportTargetField
 import com.example.data.service.ParsedRawTable
 import com.example.data.service.TsvCsvImportService
 import com.example.findMainActivity
+import com.example.ui.components.AlertType
+import com.example.ui.components.InAppTopAlertHost
+import com.example.ui.components.rememberTopAlertHostState
 import com.example.ui.i18n.LocalAppStrings
 import com.example.ui.theme.Emerald500
 import com.example.ui.theme.ExpenseRed
@@ -127,6 +131,7 @@ fun ImportScreen(
     // 0: Source Input, 1: Column Mapping, 2: Preview & Import
     var currentStep by remember { mutableIntStateOf(0) }
     val snackbarHostState = remember { SnackbarHostState() }
+    val topAlertHostState = rememberTopAlertHostState()
 
     // Source Data State
     var rawText by remember { mutableStateOf("") }
@@ -171,20 +176,23 @@ fun ImportScreen(
                                 selectedDelimiter = detected
                                 val lineCount = content.lines().filter { it.isNotBlank() }.size
                                 val msg = String.format(Locale.getDefault(), strings.parsingSuccessSnackbar, lineCount)
-                                snackbarHostState.showSnackbar(
-                                    message = msg,
-                                    withDismissAction = true
+                                topAlertHostState.showAlert(
+                                    title = "File Loaded Successfully",
+                                    message = "$lineCount lines loaded (${detected.label})",
+                                    type = AlertType.SUCCESS
                                 )
                             } else {
-                                snackbarHostState.showSnackbar(
-                                    message = "Selected file is empty.",
-                                    withDismissAction = true
+                                topAlertHostState.showAlert(
+                                    title = "Empty File",
+                                    message = "Selected file contains no content.",
+                                    type = AlertType.WARNING
                                 )
                             }
                         } catch (e: Exception) {
-                            snackbarHostState.showSnackbar(
-                                message = "Error reading file: ${e.message}",
-                                withDismissAction = true
+                            topAlertHostState.showAlert(
+                                title = "File Read Error",
+                                message = e.message ?: "Failed to read file",
+                                type = AlertType.ERROR
                             )
                         } finally {
                             isParsing = false
@@ -193,18 +201,21 @@ fun ImportScreen(
                 }
             }
         } else {
-            Toast.makeText(context, "Cannot open file picker", Toast.LENGTH_SHORT).show()
+            topAlertHostState.showAlert(
+                title = "File Picker Error",
+                message = "Cannot open system file picker.",
+                type = AlertType.ERROR
+            )
         }
     }
 
     fun parseAndGoToMapping() {
         if (rawText.isBlank()) {
-            scope.launch {
-                snackbarHostState.showSnackbar(
-                    message = "Please enter or select TSV/CSV content first.",
-                    withDismissAction = true
-                )
-            }
+            topAlertHostState.showAlert(
+                title = "No Content",
+                message = "Please pick a file or paste TSV/CSV content first.",
+                type = AlertType.WARNING
+            )
             return
         }
 
@@ -221,15 +232,16 @@ fun ImportScreen(
                 columnMappings.addAll(table.suggestedMappings)
                 currentStep = 1
                 val totalRows = table.rawRows.size
-                val msg = String.format(Locale.getDefault(), strings.parsingSuccessSnackbar, totalRows)
-                snackbarHostState.showSnackbar(
-                    message = msg,
-                    withDismissAction = true
+                topAlertHostState.showAlert(
+                    title = "Table Structure Parsed",
+                    message = "$totalRows rows parsed successfully. Map your columns.",
+                    type = AlertType.SUCCESS
                 )
             } catch (e: Exception) {
-                snackbarHostState.showSnackbar(
-                    message = "Failed to parse content: ${e.message}",
-                    withDismissAction = true
+                topAlertHostState.showAlert(
+                    title = "Parsing Failed",
+                    message = e.message ?: "Could not parse table data",
+                    type = AlertType.ERROR
                 )
             } finally {
                 isParsing = false
@@ -246,189 +258,195 @@ fun ImportScreen(
         previewItems.clear()
         previewItems.addAll(items)
         currentStep = 2
+        val validCount = items.count { it.isValid }
+        topAlertHostState.showAlert(
+            title = "Preview Generated",
+            message = "$validCount valid records ready for final import",
+            type = AlertType.SUCCESS
+        )
     }
 
-    Scaffold(
-        snackbarHost = {
-            SnackbarHost(
-                hostState = snackbarHostState,
-                snackbar = { data ->
-                    Snackbar(
-                        snackbarData = data,
-                        shape = RoundedCornerShape(12.dp),
-                        containerColor = MaterialTheme.colorScheme.inverseSurface,
-                        contentColor = MaterialTheme.colorScheme.inverseOnSurface,
-                        dismissActionContentColor = MaterialTheme.colorScheme.primary
-                    )
-                }
-            )
-        },
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = strings.importTitle,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = strings.importSubtitle,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = {
-                        if (currentStep > 0) {
-                            currentStep--
-                        } else {
-                            onNavigateBack()
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Column {
+                            Text(
+                                text = strings.importTitle,
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = strings.importSubtitle,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
-                    }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = {
+                            if (currentStep > 0) {
+                                currentStep--
+                            } else {
+                                onNavigateBack()
+                            }
+                        }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back"
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
                 )
-            )
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            // Animated parsing loading indicator
-            AnimatedVisibility(visible = isParsing) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f))
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = strings.parsingFileProgress,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(14.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    LinearProgressIndicator(
+            }
+        ) { paddingValues ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            ) {
+                // Animated parsing loading indicator
+                AnimatedVisibility(visible = isParsing) {
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(4.dp)
-                            .clip(RoundedCornerShape(2.dp)),
-                        color = MaterialTheme.colorScheme.primary,
-                        trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-                    )
-                }
-            }
-
-            // High-Polish Responsive Stepper
-            ImportStepperHeader(
-                currentStep = currentStep,
-                onStepClick = { step ->
-                    if (step < currentStep) {
-                        currentStep = step
-                    } else if (step == 1 && rawText.isNotBlank()) {
-                        parseAndGoToMapping()
-                    } else if (step == 2 && columnMappings.isNotEmpty()) {
-                        generatePreviewAndProceed()
+                            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f))
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = strings.parsingFileProgress,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(14.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        LinearProgressIndicator(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(4.dp)
+                                .clip(RoundedCornerShape(2.dp)),
+                            color = MaterialTheme.colorScheme.primary,
+                            trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                        )
                     }
                 }
-            )
 
-            // Step Content
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-            ) {
-                when (currentStep) {
-                    0 -> StepSourceInput(
-                        rawText = rawText,
-                        onRawTextChanged = { rawText = it },
-                        selectedDelimiter = selectedDelimiter,
-                        onDelimiterSelected = { selectedDelimiter = it },
-                        hasHeaderRow = hasHeaderRow,
-                        onHasHeaderRowChanged = { hasHeaderRow = it },
-                        defaultType = defaultTransactionType,
-                        onDefaultTypeChanged = { defaultTransactionType = it },
-                        isParsing = isParsing,
-                        onPickFileClick = { pickFileSafely() },
-                        onLoadSampleClick = {
-                            rawText = TsvCsvImportService.SAMPLE_TSV_DATA
-                            selectedDelimiter = ImportDelimiter.TAB
-                            hasHeaderRow = true
-                            scope.launch {
-                                snackbarHostState.showSnackbar(
-                                    message = "Loaded sample TSV data. Tap 'Proceed to Mapping'.",
-                                    withDismissAction = true
-                                )
-                            }
-                        },
-                        onContinueClick = { parseAndGoToMapping() }
-                    )
-
-                    1 -> StepColumnMapping(
-                        parsedTable = parsedTable,
-                        columnMappings = columnMappings,
-                        onMappingChanged = { index, newField ->
-                            columnMappings[index] = newField
-                        },
-                        onBackClick = { currentStep = 0 },
-                        onProceedClick = { generatePreviewAndProceed() }
-                    )
-
-                    2 -> StepPreviewAndImport(
-                        previewItems = previewItems,
-                        currencySymbol = preferences.currencySymbol,
-                        isImporting = isImporting,
-                        onToggleItem = { index ->
-                            val current = previewItems[index]
-                            previewItems[index] = current.copy(isSelected = !current.isSelected)
-                        },
-                        onSelectAll = { select ->
-                            val updated = previewItems.map { it.copy(isSelected = if (it.isValid) select else false) }
-                            previewItems.clear()
-                            previewItems.addAll(updated)
-                        },
-                        onBackClick = { currentStep = 1 },
-                        onImportClick = {
-                            val itemsToImport = previewItems.filter { it.isSelected && it.isValid }
-                            if (itemsToImport.isEmpty()) {
-                                Toast.makeText(context, strings.noRecordsToImport, Toast.LENGTH_SHORT).show()
-                                return@StepPreviewAndImport
-                            }
-
-                            isImporting = true
-                            viewModel.importTransactions(itemsToImport) { result ->
-                                isImporting = false
-                                importResult = result
-                                showSuccessDialog = true
-                            }
+                // High-Polish Responsive Stepper
+                ImportStepperHeader(
+                    currentStep = currentStep,
+                    onStepClick = { step ->
+                        if (step < currentStep) {
+                            currentStep = step
+                        } else if (step == 1 && rawText.isNotBlank()) {
+                            parseAndGoToMapping()
+                        } else if (step == 2 && columnMappings.isNotEmpty()) {
+                            generatePreviewAndProceed()
                         }
-                    )
+                    }
+                )
+
+                // Step Content
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                ) {
+                    when (currentStep) {
+                        0 -> StepSourceInput(
+                            rawText = rawText,
+                            onRawTextChanged = { rawText = it },
+                            selectedDelimiter = selectedDelimiter,
+                            onDelimiterSelected = { selectedDelimiter = it },
+                            hasHeaderRow = hasHeaderRow,
+                            onHasHeaderRowChanged = { hasHeaderRow = it },
+                            defaultType = defaultTransactionType,
+                            onDefaultTypeChanged = { defaultTransactionType = it },
+                            isParsing = isParsing,
+                            onPickFileClick = { pickFileSafely() },
+                            onLoadSampleClick = {
+                                rawText = TsvCsvImportService.SAMPLE_TSV_DATA
+                                selectedDelimiter = ImportDelimiter.TAB
+                                hasHeaderRow = true
+                                topAlertHostState.showAlert(
+                                    title = "Sample Data Loaded",
+                                    message = "Loaded sample TSV. Tap 'Proceed to Mapping'.",
+                                    type = AlertType.INFO
+                                )
+                            },
+                            onContinueClick = { parseAndGoToMapping() },
+                            onAlert = { title, msg, type ->
+                                topAlertHostState.showAlert(title, msg, type)
+                            }
+                        )
+
+                        1 -> StepColumnMapping(
+                            parsedTable = parsedTable,
+                            columnMappings = columnMappings,
+                            onMappingChanged = { index, newField ->
+                                columnMappings[index] = newField
+                            },
+                            onBackClick = { currentStep = 0 },
+                            onProceedClick = { generatePreviewAndProceed() }
+                        )
+
+                        2 -> StepPreviewAndImport(
+                            previewItems = previewItems,
+                            currencySymbol = preferences.currencySymbol,
+                            isImporting = isImporting,
+                            onToggleItem = { index ->
+                                val current = previewItems[index]
+                                previewItems[index] = current.copy(isSelected = !current.isSelected)
+                            },
+                            onSelectAll = { select ->
+                                val updated = previewItems.map { it.copy(isSelected = if (it.isValid) select else false) }
+                                previewItems.clear()
+                                previewItems.addAll(updated)
+                            },
+                            onBackClick = { currentStep = 1 },
+                            onImportClick = {
+                                val itemsToImport = previewItems.filter { it.isSelected && it.isValid }
+                                if (itemsToImport.isEmpty()) {
+                                    topAlertHostState.showAlert(
+                                        title = "No Records Selected",
+                                        message = strings.noRecordsToImport,
+                                        type = AlertType.WARNING
+                                    )
+                                    return@StepPreviewAndImport
+                                }
+
+                                isImporting = true
+                                viewModel.importTransactions(itemsToImport) { result ->
+                                    isImporting = false
+                                    importResult = result
+                                    showSuccessDialog = true
+                                }
+                            }
+                        )
+                    }
                 }
             }
         }
+
+        // Top-Right In-App Alert Host
+        InAppTopAlertHost(
+            hostState = topAlertHostState,
+            modifier = Modifier.align(Alignment.TopEnd)
+        )
     }
 
     // Success Dialog
@@ -642,7 +660,8 @@ fun StepSourceInput(
     isParsing: Boolean = false,
     onPickFileClick: () -> Unit,
     onLoadSampleClick: () -> Unit,
-    onContinueClick: () -> Unit
+    onContinueClick: () -> Unit,
+    onAlert: (String, String?, AlertType) -> Unit = { _, _, _ -> }
 ) {
     val strings = LocalAppStrings.current
     val context = LocalContext.current
@@ -692,89 +711,169 @@ fun StepSourceInput(
 
         // Format Settings Card
         Card(
-            shape = RoundedCornerShape(14.dp),
+            shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)),
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
-                modifier = Modifier.padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                modifier = Modifier.padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Delimiter selection
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = strings.delimiterLabel,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        ImportDelimiter.values().forEach { delimiter ->
-                            FilterChip(
-                                selected = selectedDelimiter == delimiter,
-                                onClick = { onDelimiterSelected(delimiter) },
-                                label = { Text(delimiter.label, fontSize = 11.5.sp) },
-                                shape = RoundedCornerShape(8.dp),
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
+                // 1. Delimiter selection - Clean header + equal width 4-segment buttons
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = strings.delimiterLabel,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                        ) {
+                            Text(
+                                text = selectedDelimiter.label,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.5.dp)
                             )
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        ImportDelimiter.values().forEach { delimiter ->
+                            val isSelected = selectedDelimiter == delimiter
+                            Surface(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(36.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .clickable { onDelimiterSelected(delimiter) },
+                                shape = RoundedCornerShape(10.dp),
+                                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                                border = if (isSelected) BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary)
+                                         else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                            ) {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier.fillMaxSize()
+                                ) {
+                                    Text(
+                                        text = when (delimiter) {
+                                            ImportDelimiter.TAB -> "Tab"
+                                            ImportDelimiter.COMMA -> "Comma (,)"
+                                            ImportDelimiter.SEMICOLON -> "Semi (;)"
+                                            ImportDelimiter.PIPE -> "Pipe (|)"
+                                        },
+                                        fontSize = 11.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                        color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
                         }
                     }
                 }
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
 
-                // Toggle Header Row
+                // 2. Toggle Header Row with authentic high-contrast Switch design
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = strings.hasHeaderLabel,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Medium
-                    )
+                    Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                        Text(
+                            text = strings.hasHeaderLabel,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = if (hasHeaderRow) "Column titles in row 1 (skipped from import)" else "Row 1 contains regular transaction data",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 11.5.sp
+                        )
+                    }
                     Switch(
                         checked = hasHeaderRow,
                         onCheckedChange = onHasHeaderRowChanged,
-                        colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.primary)
+                        thumbContent = if (hasHeaderRow) {
+                            {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(SwitchDefaults.IconSize),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        } else null,
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = MaterialTheme.colorScheme.primary,
+                            uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+                            uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                            uncheckedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                        )
                     )
                 }
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
 
-                // Default Type
+                // 3. Default Type
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = strings.defaultTypeLabel,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Medium
-                    )
+                    Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                        Text(
+                            text = strings.defaultTypeLabel,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "Applied when no type column is detected",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 11.5.sp
+                        )
+                    }
 
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         FilterChip(
                             selected = defaultType == "expense",
                             onClick = { onDefaultTypeChanged("expense") },
-                            label = { Text(strings.filterExpense, fontSize = 11.5.sp) },
-                            shape = RoundedCornerShape(8.dp)
+                            label = { Text(strings.filterExpense, fontSize = 11.5.sp, fontWeight = if (defaultType == "expense") FontWeight.Bold else FontWeight.Normal) },
+                            shape = RoundedCornerShape(8.dp),
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.8f),
+                                selectedLabelColor = MaterialTheme.colorScheme.onErrorContainer
+                            )
                         )
                         FilterChip(
                             selected = defaultType == "income",
                             onClick = { onDefaultTypeChanged("income") },
-                            label = { Text(strings.filterIncome, fontSize = 11.5.sp) },
-                            shape = RoundedCornerShape(8.dp)
+                            label = { Text(strings.filterIncome, fontSize = 11.5.sp, fontWeight = if (defaultType == "income") FontWeight.Bold else FontWeight.Normal) },
+                            shape = RoundedCornerShape(8.dp),
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = Emerald500.copy(alpha = 0.22f),
+                                selectedLabelColor = Emerald500
+                            )
                         )
                     }
                 }
@@ -799,15 +898,24 @@ fun StepSourceInput(
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     if (rawText.isNotBlank()) {
-                        Text(
-                            text = "${rawText.lines().filter { it.isNotBlank() }.size} lines",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+                        ) {
+                            Text(
+                                text = "${rawText.lines().filter { it.isNotBlank() }.size} lines",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
 
                         IconButton(
-                            onClick = { onRawTextChanged("") },
+                            onClick = {
+                                onRawTextChanged("")
+                                onAlert("Content Cleared", "Input box has been reset", AlertType.INFO)
+                            },
                             modifier = Modifier.size(24.dp)
                         ) {
                             Icon(
@@ -830,8 +938,14 @@ fun StepSourceInput(
                                         onRawTextChanged(text)
                                         val detected = TsvCsvImportService.detectDelimiter(text)
                                         onDelimiterSelected(detected)
+                                        val count = text.lines().filter { it.isNotBlank() }.size
+                                        onAlert("Pasted from Clipboard", "$count lines pasted (${detected.label})", AlertType.SUCCESS)
+                                    } else {
+                                        onAlert("Clipboard Empty", "No text found on clipboard", AlertType.WARNING)
                                     }
                                 }
+                            } else {
+                                onAlert("Clipboard Empty", "No text found on clipboard", AlertType.WARNING)
                             }
                         },
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
