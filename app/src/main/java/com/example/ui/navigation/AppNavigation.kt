@@ -306,6 +306,7 @@ fun AppNavigation(
         ) {
             AppLockOverlay(
                 correctPin = preferences.appLockPin,
+                isBiometricEnabled = preferences.isBiometricEnabled,
                 onUnlocked = { viewModel.unlockApp() }
             )
         }

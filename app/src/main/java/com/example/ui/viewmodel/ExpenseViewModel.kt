@@ -375,6 +375,10 @@ class ExpenseViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    fun setBiometricEnabled(enabled: Boolean) {
+        preferenceRepository.setBiometricEnabled(enabled)
+    }
+
     fun resetAllData(onComplete: () -> Unit = {}) {
         viewModelScope.launch {
             repository.resetAllData()

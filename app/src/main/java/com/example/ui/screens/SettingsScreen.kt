@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
@@ -53,13 +54,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.fragment.app.FragmentActivity
+import android.widget.Toast
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.data.service.BiometricAuthHelper
+import com.example.data.service.BiometricStatus
 import com.example.ui.i18n.AppLanguage
 import com.example.ui.i18n.LocalAppStrings
 import com.example.ui.theme.Emerald500
@@ -253,6 +259,116 @@ fun SettingsScreen(
                             checkedThumbColor = Color.White,
                             checkedTrackColor = Emerald500
                         )
+                    )
+                }
+            }
+        }
+
+        // Biometric Authentication Card
+        item {
+            val context = LocalContext.current
+            val biometricStatus = remember(context) { BiometricAuthHelper.checkBiometricStatus(context) }
+
+            Card(
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("biometric_card")
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xFF10B981).copy(alpha = 0.15f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Fingerprint,
+                                contentDescription = "Biometric Lock",
+                                tint = Color(0xFF10B981),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(14.dp))
+                        Column {
+                            Text(
+                                text = strings.biometricAuth,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = when {
+                                    !preferences.isAppLockEnabled -> strings.biometricSetupPinFirst
+                                    biometricStatus == BiometricStatus.NO_HARDWARE -> strings.biometricNotAvailable
+                                    biometricStatus == BiometricStatus.NOT_ENROLLED -> strings.biometricNoneEnrolled
+                                    preferences.isBiometricEnabled -> strings.biometricSubtitle
+                                    else -> strings.biometricSubtitle
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (!preferences.isAppLockEnabled) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    Switch(
+                        checked = preferences.isBiometricEnabled,
+                        onCheckedChange = { checked ->
+                            if (checked) {
+                                if (!preferences.isAppLockEnabled || preferences.appLockPin.isBlank()) {
+                                    Toast.makeText(context, strings.biometricSetupPinFirst, Toast.LENGTH_SHORT).show()
+                                    showPinSetupDialog = true
+                                } else {
+                                    when (biometricStatus) {
+                                        BiometricStatus.NO_HARDWARE -> {
+                                            Toast.makeText(context, strings.biometricNotAvailable, Toast.LENGTH_LONG).show()
+                                        }
+                                        BiometricStatus.NOT_ENROLLED -> {
+                                            Toast.makeText(context, strings.biometricNoneEnrolled, Toast.LENGTH_LONG).show()
+                                        }
+                                        else -> {
+                                            val activity = context as? FragmentActivity
+                                            if (activity != null) {
+                                                BiometricAuthHelper.promptBiometric(
+                                                    activity = activity,
+                                                    title = strings.biometricPromptTitle,
+                                                    subtitle = strings.biometricPromptSubtitle,
+                                                    negativeButtonText = strings.biometricPromptNegative,
+                                                    onSuccess = {
+                                                        viewModel.setBiometricEnabled(true)
+                                                        Toast.makeText(context, strings.biometricEnabledSuccess, Toast.LENGTH_SHORT).show()
+                                                    },
+                                                    onError = { _, _ -> }
+                                                )
+                                            } else {
+                                                viewModel.setBiometricEnabled(true)
+                                                Toast.makeText(context, strings.biometricEnabledSuccess, Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+                                    }
+                                }
+                            } else {
+                                viewModel.setBiometricEnabled(false)
+                            }
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = Emerald500
+                        ),
+                        modifier = Modifier.testTag("biometric_switch")
                     )
                 }
             }
