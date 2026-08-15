@@ -4,8 +4,6 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -137,14 +135,45 @@ fun SettingsScreen(
         )
     }
 
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        hasNotificationPermission = isGranted
-        if (isGranted) {
-            Toast.makeText(context, "Notifications enabled", Toast.LENGTH_SHORT).show()
-        } else {
-            Toast.makeText(context, strings.notificationPermissionPrompt, Toast.LENGTH_LONG).show()
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    hasNotificationPermission = ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.POST_NOTIFICATIONS
+                    ) == PackageManager.PERMISSION_GRANTED
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val activity = when (context) {
+                is android.app.Activity -> context
+                is android.content.ContextWrapper -> {
+                    var current: android.content.Context? = context
+                    while (current is android.content.ContextWrapper) {
+                        if (current is android.app.Activity) break
+                        current = current.baseContext
+                    }
+                    current as? android.app.Activity
+                }
+                else -> null
+            }
+            if (activity != null) {
+                androidx.core.app.ActivityCompat.requestPermissions(
+                    activity,
+                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                    101
+                )
+            }
         }
     }
 
@@ -308,10 +337,9 @@ fun SettingsScreen(
                             checked = preferences.isBudgetAlertsEnabled,
                             onCheckedChange = { checked ->
                                 if (checked && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasNotificationPermission) {
-                                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                } else {
-                                    viewModel.setBudgetAlertsEnabled(checked)
+                                    requestNotificationPermission()
                                 }
+                                viewModel.setBudgetAlertsEnabled(checked)
                             },
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = Color.White,
@@ -404,10 +432,13 @@ fun SettingsScreen(
                             Button(
                                 onClick = {
                                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasNotificationPermission) {
-                                        permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                    } else {
+                                        requestNotificationPermission()
+                                    }
+                                    try {
                                         viewModel.sendTestBudgetNotification()
                                         Toast.makeText(context, strings.testAlertSuccess, Toast.LENGTH_SHORT).show()
+                                    } catch (e: Exception) {
+                                        Toast.makeText(context, "Alert: ${e.message}", Toast.LENGTH_SHORT).show()
                                     }
                                 },
                                 modifier = Modifier.weight(1f),
@@ -432,10 +463,13 @@ fun SettingsScreen(
                             Button(
                                 onClick = {
                                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasNotificationPermission) {
-                                        permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                    } else {
+                                        requestNotificationPermission()
+                                    }
+                                    try {
                                         viewModel.checkBudgetAlertsNow()
                                         Toast.makeText(context, strings.checkBudgetsNowAction, Toast.LENGTH_SHORT).show()
+                                    } catch (e: Exception) {
+                                        Toast.makeText(context, "Check: ${e.message}", Toast.LENGTH_SHORT).show()
                                     }
                                 },
                                 modifier = Modifier.weight(1f),
@@ -581,7 +615,7 @@ fun SettingsScreen(
                             checked = preferences.isBackupReminderEnabled,
                             onCheckedChange = { enabled ->
                                 if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasNotificationPermission) {
-                                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                    requestNotificationPermission()
                                 }
                                 viewModel.setBackupReminderEnabled(enabled)
                             },
@@ -723,10 +757,13 @@ fun SettingsScreen(
                         Button(
                             onClick = {
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasNotificationPermission) {
-                                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                } else {
+                                    requestNotificationPermission()
+                                }
+                                try {
                                     viewModel.sendTestBackupReminder()
                                     Toast.makeText(context, strings.testBackupReminderSuccess, Toast.LENGTH_SHORT).show()
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Reminder: ${e.message}", Toast.LENGTH_SHORT).show()
                                 }
                             },
                             modifier = Modifier.fillMaxWidth(),
