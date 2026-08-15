@@ -130,7 +130,10 @@ class MainActivity : FragmentActivity() {
             val appStrings = getAppStrings(userPreferences.language)
 
             CompositionLocalProvider(LocalAppStrings provides appStrings) {
-                MyApplicationTheme(darkTheme = isDarkTheme) {
+                MyApplicationTheme(
+                    darkTheme = isDarkTheme,
+                    themePreset = userPreferences.themePreset
+                ) {
                     Surface(modifier = Modifier.fillMaxSize()) {
                         AppNavigation(
                             viewModel = viewModel,

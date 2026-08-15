@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Tour
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -64,6 +65,7 @@ import com.example.ui.screens.CategoriesScreen
 import com.example.ui.screens.DashboardScreen
 import com.example.ui.screens.ExportScreen
 import com.example.ui.screens.ImportScreen
+import com.example.ui.screens.OnboardingScreen
 import com.example.ui.screens.SettingsScreen
 import com.example.ui.screens.TransactionsScreen
 import com.example.ui.theme.Emerald400
@@ -79,6 +81,7 @@ sealed class Screen(val route: String, val icon: ImageVector) {
     object Categories : Screen("categories", Icons.Default.Category)
     object Export : Screen("export", Icons.Default.FileDownload)
     object Import : Screen("import", Icons.Default.FileDownload)
+    object Onboarding : Screen("onboarding", Icons.Default.Tour)
 }
 
 fun Screen.getTitle(strings: AppStrings): String {
@@ -91,6 +94,7 @@ fun Screen.getTitle(strings: AppStrings): String {
         Screen.Categories -> strings.navCategories
         Screen.Export -> strings.navExport
         Screen.Import -> strings.importTitle
+        Screen.Onboarding -> "Welcome"
     }
 }
 
@@ -127,14 +131,16 @@ fun AppNavigation(
     var showNewCategoryDialogFromSheet by remember { mutableStateOf(false) }
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route ?: Screen.Dashboard.route
+    val currentRoute = navBackStackEntry?.destination?.route ?: if (preferences.isOnboardingCompleted) Screen.Dashboard.route else Screen.Onboarding.route
 
     val isTopLevelScreen = bottomNavScreens.any { it.route == currentRoute }
+
+    val startDest = if (preferences.isOnboardingCompleted) Screen.Dashboard.route else Screen.Onboarding.route
 
     Box(modifier = modifier.fillMaxSize()) {
         Scaffold(
             topBar = {
-                if (!isTopLevelScreen && currentRoute != Screen.Import.route) {
+                if (!isTopLevelScreen && currentRoute != Screen.Import.route && currentRoute != Screen.Onboarding.route) {
                     TopAppBar(
                         title = {
                             Text(
@@ -161,7 +167,7 @@ fun AppNavigation(
                 }
             },
             bottomBar = {
-                if (isTopLevelScreen) {
+                if (isTopLevelScreen && currentRoute != Screen.Onboarding.route) {
                     NavigationBar(
                         containerColor = MaterialTheme.colorScheme.surface,
                         tonalElevation = 8.dp,
@@ -215,9 +221,22 @@ fun AppNavigation(
         ) { innerPadding ->
             NavHost(
                 navController = navController,
-                startDestination = Screen.Dashboard.route,
+                startDestination = startDest,
                 modifier = Modifier.padding(innerPadding)
             ) {
+                composable(Screen.Onboarding.route) {
+                    OnboardingScreen(
+                        viewModel = viewModel,
+                        onFinish = {
+                            navController.navigate(Screen.Dashboard.route) {
+                                popUpTo(Screen.Onboarding.route) {
+                                    inclusive = true
+                                }
+                            }
+                        }
+                    )
+                }
+
                 composable(Screen.Dashboard.route) {
                     DashboardScreen(
                         viewModel = viewModel,
@@ -277,6 +296,9 @@ fun AppNavigation(
                         },
                         onNavigateToImport = {
                             navController.navigate(Screen.Import.route)
+                        },
+                        onNavigateToOnboarding = {
+                            navController.navigate(Screen.Onboarding.route)
                         }
                     )
                 }

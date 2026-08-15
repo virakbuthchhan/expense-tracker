@@ -86,3 +86,120 @@ val CategoryColors = listOf(
     Color(0xFF78716C)  // Warm Stone
 )
 
+// Theme Presets Data Model & Color Palettes
+data class ThemePresetInfo(
+    val id: String,
+    val name: String,
+    val description: String,
+    val primary: Color,
+    val primaryLight: Color,
+    val primaryDark: Color,
+    val secondary: Color,
+    val secondaryDark: Color,
+    val tertiary: Color,
+    val tertiaryDark: Color,
+    val surfaceLight: Color = Color(0xFFFFFFFF),
+    val bgLight: Color = Color(0xFFFDF8F8),
+    val surfaceDark: Color = Color(0xFF1E1E24),
+    val bgDark: Color = Color(0xFF131316)
+)
+
+val AppThemePresets = listOf(
+    ThemePresetInfo(
+        id = "terracotta",
+        name = "Terracotta Sunset",
+        description = "Warm earthy clay & amber tones",
+        primary = Color(0xFF8F4C38),
+        primaryLight = Color(0xFFFFDBD1),
+        primaryDark = Color(0xFFFFB5A0),
+        secondary = Color(0xFF77574E),
+        secondaryDark = Color(0xFFE7BDB2),
+        tertiary = Color(0xFF6C5D2F),
+        tertiaryDark = Color(0xFFD8C58D),
+        surfaceLight = Color(0xFFFFFFFF),
+        bgLight = Color(0xFFFDF8F8),
+        surfaceDark = Color(0xFF231918),
+        bgDark = Color(0xFF1A1110)
+    ),
+    ThemePresetInfo(
+        id = "emerald",
+        name = "Emerald Forest",
+        description = "Prosperous deep emerald & mint sage",
+        primary = Color(0xFF059669),
+        primaryLight = Color(0xFFD1FAE5),
+        primaryDark = Color(0xFF6EE7B7),
+        secondary = Color(0xFF047857),
+        secondaryDark = Color(0xFFA7F3D0),
+        tertiary = Color(0xFF0D9488),
+        tertiaryDark = Color(0xFF5EEAD4),
+        surfaceLight = Color(0xFFFFFFFF),
+        bgLight = Color(0xFFF4FBF7),
+        surfaceDark = Color(0xFF11221B),
+        bgDark = Color(0xFF0A1612)
+    ),
+    ThemePresetInfo(
+        id = "sapphire",
+        name = "Ocean Sapphire",
+        description = "Royal azure blue & deep ocean cyan",
+        primary = Color(0xFF0284C7),
+        primaryLight = Color(0xFFE0F2FE),
+        primaryDark = Color(0xFF7DD3FC),
+        secondary = Color(0xFF0369A1),
+        secondaryDark = Color(0xFFBAE6FD),
+        tertiary = Color(0xFF2563EB),
+        tertiaryDark = Color(0xFF93C5FD),
+        surfaceLight = Color(0xFFFFFFFF),
+        bgLight = Color(0xFFF0F9FF),
+        surfaceDark = Color(0xFF101B2B),
+        bgDark = Color(0xFF0A101D)
+    ),
+    ThemePresetInfo(
+        id = "amethyst",
+        name = "Amethyst Luxury",
+        description = "Rich royal violet & cosmic lavender",
+        primary = Color(0xFF7C3AED),
+        primaryLight = Color(0xFFEDE9FE),
+        primaryDark = Color(0xFFC4B5FD),
+        secondary = Color(0xFF6D28D9),
+        secondaryDark = Color(0xFFDDD6FE),
+        tertiary = Color(0xFF9333EA),
+        tertiaryDark = Color(0xFFE9D5FF),
+        surfaceLight = Color(0xFFFFFFFF),
+        bgLight = Color(0xFFFAF5FF),
+        surfaceDark = Color(0xFF1B132B),
+        bgDark = Color(0xFF120C1F)
+    ),
+    ThemePresetInfo(
+        id = "coral",
+        name = "Sunset Coral",
+        description = "Vibrant warm coral & golden tangerine",
+        primary = Color(0xFFEA580C),
+        primaryLight = Color(0xFFFFEDD5),
+        primaryDark = Color(0xFFFDBA74),
+        secondary = Color(0xFFC2410C),
+        secondaryDark = Color(0xFFFED7AA),
+        tertiary = Color(0xFFD97706),
+        tertiaryDark = Color(0xFFFCD34D),
+        surfaceLight = Color(0xFFFFFFFF),
+        bgLight = Color(0xFFFFF7ED),
+        surfaceDark = Color(0xFF261810),
+        bgDark = Color(0xFF1A0E08)
+    ),
+    ThemePresetInfo(
+        id = "cyber",
+        name = "Cyber Titanium",
+        description = "Modern slate titanium & neon lime",
+        primary = Color(0xFF65A30D),
+        primaryLight = Color(0xFFECFCCB),
+        primaryDark = Color(0xFFBEF264),
+        secondary = Color(0xFF475569),
+        secondaryDark = Color(0xFF94A3B8),
+        tertiary = Color(0xFF0F766E),
+        tertiaryDark = Color(0xFF2DD4BF),
+        surfaceLight = Color(0xFFFFFFFF),
+        bgLight = Color(0xFFF8FAFC),
+        surfaceDark = Color(0xFF1E242B),
+        bgDark = Color(0xFF11151A)
+    )
+)
+

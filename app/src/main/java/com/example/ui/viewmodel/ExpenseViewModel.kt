@@ -472,6 +472,22 @@ class ExpenseViewModel(application: Application) : AndroidViewModel(application)
         preferenceRepository.setThemePreference(isDark, followSystem)
     }
 
+    fun setThemePreset(preset: String) {
+        preferenceRepository.setThemePreset(preset)
+    }
+
+    fun setGlassmorphismEnabled(enabled: Boolean) {
+        preferenceRepository.setGlassmorphismEnabled(enabled)
+    }
+
+    fun setAnimationsEnabled(enabled: Boolean) {
+        preferenceRepository.setAnimationsEnabled(enabled)
+    }
+
+    fun setOnboardingCompleted(completed: Boolean) {
+        preferenceRepository.setOnboardingCompleted(completed)
+    }
+
     fun setBudgetAlertsEnabled(enabled: Boolean) {
         preferenceRepository.setBudgetAlertsEnabled(enabled)
         if (enabled) {

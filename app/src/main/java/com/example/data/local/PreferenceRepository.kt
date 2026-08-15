@@ -24,6 +24,10 @@ data class UserPreferences(
     val isDarkMode: Boolean = false,
     val isFollowSystemTheme: Boolean = true,
     val themeMode: String = "system", // "system", "light", "dark"
+    val themePreset: String = "terracotta", // "terracotta", "emerald", "sapphire", "amethyst", "coral", "cyber"
+    val isGlassmorphismEnabled: Boolean = true,
+    val isAnimationsEnabled: Boolean = true,
+    val isOnboardingCompleted: Boolean = false,
     val isAppLockEnabled: Boolean = false,
     val isBiometricEnabled: Boolean = false,
     val appLockPin: String = "",
@@ -60,6 +64,10 @@ class PreferenceRepository(context: Context) {
             isDarkMode = isDark,
             isFollowSystemTheme = isFollowSystem,
             themeMode = themeModeStr,
+            themePreset = prefs.getString("theme_preset", "terracotta") ?: "terracotta",
+            isGlassmorphismEnabled = prefs.getBoolean("is_glassmorphism_enabled", true),
+            isAnimationsEnabled = prefs.getBoolean("is_animations_enabled", true),
+            isOnboardingCompleted = prefs.getBoolean("is_onboarding_completed", false),
             isAppLockEnabled = prefs.getBoolean("is_app_lock_enabled", false),
             isBiometricEnabled = prefs.getBoolean("is_biometric_enabled", false),
             appLockPin = prefs.getString("app_lock_pin", "") ?: "",
@@ -70,6 +78,34 @@ class PreferenceRepository(context: Context) {
             backupReminderFrequency = prefs.getString("backup_reminder_frequency", "weekly") ?: "weekly",
             lastExportTimestamp = prefs.getLong("last_export_timestamp", 0L)
         )
+    }
+
+    fun setOnboardingCompleted(completed: Boolean) {
+        prefs.edit()
+            .putBoolean("is_onboarding_completed", completed)
+            .apply()
+        _userPreferences.value = loadPreferences()
+    }
+
+    fun setThemePreset(preset: String) {
+        prefs.edit()
+            .putString("theme_preset", preset)
+            .apply()
+        _userPreferences.value = loadPreferences()
+    }
+
+    fun setGlassmorphismEnabled(enabled: Boolean) {
+        prefs.edit()
+            .putBoolean("is_glassmorphism_enabled", enabled)
+            .apply()
+        _userPreferences.value = loadPreferences()
+    }
+
+    fun setAnimationsEnabled(enabled: Boolean) {
+        prefs.edit()
+            .putBoolean("is_animations_enabled", enabled)
+            .apply()
+        _userPreferences.value = loadPreferences()
     }
 
     fun setLanguage(language: String) {
