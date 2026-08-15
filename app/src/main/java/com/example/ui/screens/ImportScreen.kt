@@ -8,6 +8,7 @@ import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -76,6 +77,8 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -1356,85 +1359,135 @@ fun StepPreviewAndImport(
         Spacer(modifier = Modifier.height(8.dp))
 
         // Search & Controls in Preview
-        OutlinedTextField(
+        TextField(
             value = previewSearchQuery,
             onValueChange = { previewSearchQuery = it },
-            placeholder = { Text(strings.searchPlaceholder, fontSize = 12.sp) },
+            placeholder = { Text(strings.searchPlaceholder, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)) },
             leadingIcon = {
-                Icon(imageVector = Icons.Default.Search, contentDescription = null, modifier = Modifier.size(16.dp))
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
             },
             trailingIcon = {
                 if (previewSearchQuery.isNotBlank()) {
                     IconButton(onClick = { previewSearchQuery = "" }) {
-                        Icon(imageVector = Icons.Default.Clear, contentDescription = "Clear", modifier = Modifier.size(16.dp))
+                        Icon(
+                            imageVector = Icons.Default.Clear,
+                            contentDescription = "Clear",
+                            modifier = Modifier.size(18.dp)
+                        )
                     }
                 }
             },
             singleLine = true,
-            shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = MaterialTheme.colorScheme.surface,
-                unfocusedContainerColor = MaterialTheme.colorScheme.surface
+            shape = RoundedCornerShape(16.dp),
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                disabledIndicatorColor = Color.Transparent
             ),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(46.dp)
+                .height(52.dp)
+                .border(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                    shape = RoundedCornerShape(16.dp)
+                )
         )
 
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
-        // Select All / Deselect All Controls and Filter Chips Row
-        Row(
+        // Filter Chips and Select All Controls
+        Column(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                modifier = Modifier.weight(1f)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                item {
-                    FilterChip(
-                        selected = filterType == "all",
-                        onClick = { filterType = "all" },
-                        label = { Text("${strings.filterAll} (${previewItems.size})", fontSize = 11.sp) },
-                        shape = RoundedCornerShape(8.dp)
-                    )
-                }
-                item {
-                    FilterChip(
-                        selected = filterType == "expense",
-                        onClick = { filterType = "expense" },
-                        label = { Text("${strings.filterExpense} (${previewItems.count { it.type == "expense" }})", fontSize = 11.sp) },
-                        shape = RoundedCornerShape(8.dp)
-                    )
-                }
-                item {
-                    FilterChip(
-                        selected = filterType == "income",
-                        onClick = { filterType = "income" },
-                        label = { Text("${strings.filterIncome} (${previewItems.count { it.type == "income" }})", fontSize = 11.sp) },
-                        shape = RoundedCornerShape(8.dp)
-                    )
+                val filterOptions = listOf(
+                    "all" to strings.filterAll,
+                    "expense" to strings.filterExpense,
+                    "income" to strings.filterIncome
+                )
+
+                filterOptions.forEach { (type, label) ->
+                    val isSelected = filterType == type
+                    val count = when (type) {
+                        "expense" -> previewItems.count { it.type == "expense" }
+                        "income" -> previewItems.count { it.type == "income" }
+                        else -> previewItems.size
+                    }
+
+                    Surface(
+                        onClick = { filterType = type },
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                        contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.height(36.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier.padding(horizontal = 12.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "$label ($count)",
+                                fontSize = 12.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                            )
+                        }
+                    }
                 }
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                TextButton(
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
                     onClick = { onSelectAll(true) },
-                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
+                    shape = RoundedCornerShape(10.dp),
+                    color = Emerald500.copy(alpha = 0.12f),
+                    contentColor = Emerald500,
+                    modifier = Modifier.weight(1f).height(34.dp)
                 ) {
-                    Icon(imageVector = Icons.Default.DoneAll, contentDescription = null, modifier = Modifier.size(14.dp))
-                    Spacer(modifier = Modifier.width(3.dp))
-                    Text(strings.selectAll, fontSize = 11.sp)
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(imageVector = Icons.Default.DoneAll, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(strings.selectAll, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    }
                 }
-                TextButton(
+
+                Surface(
                     onClick = { onSelectAll(false) },
-                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
+                    shape = RoundedCornerShape(10.dp),
+                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.1f),
+                    contentColor = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.weight(1f).height(34.dp)
                 ) {
-                    Icon(imageVector = Icons.Default.RemoveDone, contentDescription = null, modifier = Modifier.size(14.dp))
-                    Spacer(modifier = Modifier.width(3.dp))
-                    Text(strings.deselectAll, fontSize = 11.sp)
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(imageVector = Icons.Default.RemoveDone, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(strings.deselectAll, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    }
                 }
             }
         }
