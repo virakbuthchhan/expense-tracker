@@ -66,29 +66,42 @@ fun HeroBalanceCard(
     val isPositive = totalBalance >= 0
     val strings = LocalAppStrings.current
 
+    val primary = MaterialTheme.colorScheme.primary
+    val secondary = MaterialTheme.colorScheme.secondary
+    val tertiary = MaterialTheme.colorScheme.tertiary
+    val isDark = MaterialTheme.colorScheme.background.red < 0.5f
+
+    val cardGradient = if (isDark) {
+        listOf(
+            primary.copy(alpha = 0.38f),
+            secondary.copy(alpha = 0.28f),
+            MaterialTheme.colorScheme.surface
+        )
+    } else {
+        listOf(
+            primary,
+            secondary,
+            tertiary
+        )
+    }
+
     Card(
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
         modifier = modifier
             .fillMaxWidth()
-            .shadow(8.dp, RoundedCornerShape(24.dp), spotColor = Color(0xFF8F4C38).copy(alpha = 0.25f))
+            .shadow(8.dp, RoundedCornerShape(24.dp), spotColor = primary.copy(alpha = 0.3f))
             .background(
-                brush = Brush.linearGradient(
-                    colors = listOf(
-                        Color(0xFF2E1915),
-                        Color(0xFF45241C),
-                        Color(0xFF1E100D)
-                    )
-                ),
+                brush = Brush.linearGradient(colors = cardGradient),
                 shape = RoundedCornerShape(24.dp)
             )
             .border(
                 1.dp,
                 Brush.linearGradient(
                     listOf(
-                        Color(0xFFFFB5A0).copy(alpha = 0.45f),
-                        Color(0xFF8F4C38).copy(alpha = 0.2f),
-                        Color.White.copy(alpha = 0.08f)
+                        Color.White.copy(alpha = if (isDark) 0.3f else 0.45f),
+                        primary.copy(alpha = 0.3f),
+                        Color.White.copy(alpha = 0.1f)
                     )
                 ),
                 RoundedCornerShape(24.dp)
@@ -108,22 +121,20 @@ fun HeroBalanceCard(
                 Text(
                     text = strings.totalBalance,
                     style = MaterialTheme.typography.labelMedium,
-                    color = Color.White.copy(alpha = 0.7f)
+                    color = Color.White.copy(alpha = 0.85f)
                 )
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(100.dp))
                         .background(
-                            if (isPositive) Emerald500.copy(alpha = 0.2f) else ExpenseRed.copy(
-                                alpha = 0.2f
-                            )
+                            if (isPositive) Color.White.copy(alpha = 0.2f) else ExpenseRed.copy(alpha = 0.3f)
                         )
                         .padding(horizontal = 10.dp, vertical = 4.dp)
                 ) {
                     Text(
                         text = if (isPositive) strings.savingsRate else strings.overBudget,
                         style = MaterialTheme.typography.labelSmall,
-                        color = if (isPositive) Emerald400 else ExpenseRed,
+                        color = if (isPositive) Color.White else Color(0xFFFFDAD6),
                         fontWeight = FontWeight.SemiBold
                     )
                 }
