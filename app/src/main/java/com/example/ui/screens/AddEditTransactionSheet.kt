@@ -76,6 +76,7 @@ import com.example.ui.theme.Emerald400
 import com.example.ui.theme.Emerald500
 import com.example.ui.theme.ExpenseRed
 import com.example.ui.theme.IncomeGreen
+import com.example.ui.util.rememberHapticFeedbackHelper
 import com.example.ui.viewmodel.ExpenseViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -94,6 +95,7 @@ fun AddEditTransactionSheet(
 ) {
     val allCategories by viewModel.allCategories.collectAsStateWithLifecycle()
     val preferences by viewModel.userPreferences.collectAsStateWithLifecycle()
+    val haptic = rememberHapticFeedbackHelper(isHapticEnabled = preferences.isHapticEnabled)
     val strings = LocalAppStrings.current
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -127,6 +129,7 @@ fun AddEditTransactionSheet(
     val formattedDate = dateFormat.format(Date(selectedDateMillis))
 
     fun openDatePicker() {
+        haptic.selection()
         val cal = Calendar.getInstance().apply { timeInMillis = selectedDateMillis }
         DatePickerDialog(
             context,
@@ -135,6 +138,7 @@ fun AddEditTransactionSheet(
                     set(year, month, dayOfMonth, 12, 0)
                 }
                 selectedDateMillis = newCal.timeInMillis
+                haptic.selection()
             },
             cal.get(Calendar.YEAR),
             cal.get(Calendar.MONTH),
@@ -145,6 +149,7 @@ fun AddEditTransactionSheet(
     fun handleSave() {
         val cleanAmount = amountText.trim().toDoubleOrNull()
         if (cleanAmount == null || cleanAmount <= 0.0) {
+            haptic.warning()
             errorMessage = strings.validAmountError
             return
         }
@@ -152,6 +157,7 @@ fun AddEditTransactionSheet(
             selectedCategoryId = filteredCategories.first().id
         }
 
+        haptic.success()
         coroutineScope.launch {
             showSuccessAnimation = true
             delay(500)
@@ -209,6 +215,7 @@ fun AddEditTransactionSheet(
                         if (transactionToEdit != null) {
                             IconButton(
                                 onClick = {
+                                    haptic.destructive()
                                     viewModel.deleteTransaction(transactionToEdit.id)
                                     onDismiss()
                                 }
@@ -242,6 +249,7 @@ fun AddEditTransactionSheet(
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(if (type == "expense") ExpenseRed else Color.Transparent)
                                 .clickable {
+                                    haptic.selection()
                                     type = "expense"
                                     val cat = allCategories.firstOrNull { it.type == "expense" || it.type == "both" }
                                     if (cat != null) selectedCategoryId = cat.id
@@ -264,6 +272,7 @@ fun AddEditTransactionSheet(
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(if (type == "income") IncomeGreen else Color.Transparent)
                                 .clickable {
+                                    haptic.selection()
                                     type = "income"
                                     val cat = allCategories.firstOrNull { it.type == "income" || it.type == "both" }
                                     if (cat != null) selectedCategoryId = cat.id
@@ -411,7 +420,10 @@ fun AddEditTransactionSheet(
                                         color = if (isSelected) catColor else MaterialTheme.colorScheme.outlineVariant,
                                         shape = RoundedCornerShape(16.dp)
                                     )
-                                    .clickable { selectedCategoryId = category.id }
+                                    .clickable {
+                                        haptic.tap()
+                                        selectedCategoryId = category.id
+                                    }
                                     .padding(horizontal = 14.dp, vertical = 10.dp)
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -480,7 +492,10 @@ fun AddEditTransactionSheet(
                                     if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
                                     RoundedCornerShape(12.dp)
                                 )
-                                .clickable { selectedDateMillis = System.currentTimeMillis() }
+                                .clickable {
+                                    haptic.selection()
+                                    selectedDateMillis = System.currentTimeMillis()
+                                }
                                 .padding(vertical = 10.dp),
                             contentAlignment = Alignment.Center
                         ) {
@@ -507,6 +522,7 @@ fun AddEditTransactionSheet(
                                     RoundedCornerShape(12.dp)
                                 )
                                 .clickable {
+                                    haptic.selection()
                                     val yCal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -1) }
                                     selectedDateMillis = yCal.timeInMillis
                                 }

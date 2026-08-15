@@ -27,6 +27,7 @@ data class UserPreferences(
     val themePreset: String = "terracotta", // "terracotta", "emerald", "sapphire", "amethyst", "coral", "cyber"
     val isGlassmorphismEnabled: Boolean = true,
     val isAnimationsEnabled: Boolean = true,
+    val isHapticEnabled: Boolean = true,
     val isOnboardingCompleted: Boolean = false,
     val isAppLockEnabled: Boolean = false,
     val isBiometricEnabled: Boolean = false,
@@ -67,6 +68,7 @@ class PreferenceRepository(context: Context) {
             themePreset = prefs.getString("theme_preset", "terracotta") ?: "terracotta",
             isGlassmorphismEnabled = prefs.getBoolean("is_glassmorphism_enabled", true),
             isAnimationsEnabled = prefs.getBoolean("is_animations_enabled", true),
+            isHapticEnabled = prefs.getBoolean("is_haptic_enabled", true),
             isOnboardingCompleted = prefs.getBoolean("is_onboarding_completed", false),
             isAppLockEnabled = prefs.getBoolean("is_app_lock_enabled", false),
             isBiometricEnabled = prefs.getBoolean("is_biometric_enabled", false),
@@ -104,6 +106,13 @@ class PreferenceRepository(context: Context) {
     fun setAnimationsEnabled(enabled: Boolean) {
         prefs.edit()
             .putBoolean("is_animations_enabled", enabled)
+            .apply()
+        _userPreferences.value = loadPreferences()
+    }
+
+    fun setHapticEnabled(enabled: Boolean) {
+        prefs.edit()
+            .putBoolean("is_haptic_enabled", enabled)
             .apply()
         _userPreferences.value = loadPreferences()
     }

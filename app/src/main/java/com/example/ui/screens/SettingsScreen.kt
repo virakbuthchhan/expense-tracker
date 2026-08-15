@@ -82,6 +82,7 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Tour
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material.icons.filled.ViewInAr
 import androidx.compose.material.icons.filled.Check
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -99,6 +100,7 @@ import com.example.ui.theme.AppThemePresets
 import com.example.ui.theme.ThemePresetInfo
 import com.example.ui.theme.Emerald500
 import com.example.ui.theme.ExpenseRed
+import com.example.ui.util.rememberHapticFeedbackHelper
 import com.example.ui.viewmodel.ExpenseViewModel
 import kotlin.math.roundToInt
 
@@ -133,6 +135,7 @@ fun SettingsScreen(
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val preferences by viewModel.userPreferences.collectAsStateWithLifecycle()
+    val haptic = rememberHapticFeedbackHelper(isHapticEnabled = preferences.isHapticEnabled)
     val strings = LocalAppStrings.current
     val currentLanguage = AppLanguage.fromCode(preferences.language)
 
@@ -258,7 +261,10 @@ fun SettingsScreen(
                             title = strings.themeSystem,
                             icon = Icons.Default.BrightnessAuto,
                             isSelected = currentMode == ThemeMode.SYSTEM,
-                            onClick = { viewModel.setThemeMode(ThemeMode.SYSTEM) },
+                            onClick = {
+                                haptic.selection()
+                                viewModel.setThemeMode(ThemeMode.SYSTEM)
+                            },
                             modifier = Modifier.weight(1f)
                         )
 
@@ -266,7 +272,10 @@ fun SettingsScreen(
                             title = strings.themeLight,
                             icon = Icons.Default.LightMode,
                             isSelected = currentMode == ThemeMode.LIGHT,
-                            onClick = { viewModel.setThemeMode(ThemeMode.LIGHT) },
+                            onClick = {
+                                haptic.selection()
+                                viewModel.setThemeMode(ThemeMode.LIGHT)
+                            },
                             modifier = Modifier.weight(1f)
                         )
 
@@ -274,7 +283,10 @@ fun SettingsScreen(
                             title = strings.themeDark,
                             icon = Icons.Default.DarkMode,
                             isSelected = currentMode == ThemeMode.DARK,
-                            onClick = { viewModel.setThemeMode(ThemeMode.DARK) },
+                            onClick = {
+                                haptic.selection()
+                                viewModel.setThemeMode(ThemeMode.DARK)
+                            },
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -346,7 +358,10 @@ fun SettingsScreen(
                                     ThemePresetSettingItem(
                                         preset = preset,
                                         isSelected = isSelected,
-                                        onClick = { viewModel.setThemePreset(preset.id) },
+                                        onClick = {
+                                            haptic.selection()
+                                            viewModel.setThemePreset(preset.id)
+                                        },
                                         modifier = Modifier.weight(1f)
                                     )
                                 }
@@ -357,7 +372,7 @@ fun SettingsScreen(
             }
         }
 
-        // Glassmorphism & Visual Polish Card
+        // Glassmorphism, Animations & Tactile Haptic Card
         item {
             Card(
                 shape = RoundedCornerShape(20.dp),
@@ -408,7 +423,10 @@ fun SettingsScreen(
 
                         Switch(
                             checked = preferences.isGlassmorphismEnabled,
-                            onCheckedChange = { viewModel.setGlassmorphismEnabled(it) },
+                            onCheckedChange = {
+                                haptic.toggle()
+                                viewModel.setGlassmorphismEnabled(it)
+                            },
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = Color.White,
                                 checkedTrackColor = MaterialTheme.colorScheme.primary
@@ -460,10 +478,70 @@ fun SettingsScreen(
 
                         Switch(
                             checked = preferences.isAnimationsEnabled,
-                            onCheckedChange = { viewModel.setAnimationsEnabled(it) },
+                            onCheckedChange = {
+                                haptic.toggle()
+                                viewModel.setAnimationsEnabled(it)
+                            },
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = Color.White,
                                 checkedTrackColor = MaterialTheme.colorScheme.primary
+                            )
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // Tactile Haptic Feedback Switch
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            modifier = Modifier.weight(1f),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(Color(0xFFEC4899).copy(alpha = 0.12f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Vibration,
+                                    contentDescription = null,
+                                    tint = Color(0xFFEC4899),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = "Haptic Tactile Feedback",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "Vibrations for clicks, switches, and savings",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+
+                        Switch(
+                            checked = preferences.isHapticEnabled,
+                            onCheckedChange = { enabled ->
+                                viewModel.setHapticEnabled(enabled)
+                                if (enabled) {
+                                    haptic.forceSuccess()
+                                }
+                            },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = Color(0xFFEC4899)
                             )
                         )
                     }
@@ -599,6 +677,7 @@ fun SettingsScreen(
                         Switch(
                             checked = preferences.isBudgetAlertsEnabled,
                             onCheckedChange = { checked ->
+                                haptic.toggle()
                                 if (checked && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasNotificationPermission) {
                                     requestNotificationPermission()
                                 }
@@ -877,6 +956,7 @@ fun SettingsScreen(
                         Switch(
                             checked = preferences.isBackupReminderEnabled,
                             onCheckedChange = { enabled ->
+                                haptic.toggle()
                                 if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasNotificationPermission) {
                                     requestNotificationPermission()
                                 }
@@ -1116,6 +1196,7 @@ fun SettingsScreen(
                     Switch(
                         checked = preferences.isAppLockEnabled,
                         onCheckedChange = { checked ->
+                            haptic.toggle()
                             if (checked) {
                                 showPinSetupDialog = true
                             } else {
@@ -1194,6 +1275,7 @@ fun SettingsScreen(
                     Switch(
                         checked = preferences.isBiometricEnabled,
                         onCheckedChange = { checked ->
+                            haptic.toggle()
                             if (checked) {
                                 if (!preferences.isAppLockEnabled || preferences.appLockPin.isBlank()) {
                                     Toast.makeText(context, strings.biometricSetupPinFirst, Toast.LENGTH_SHORT).show()
@@ -1300,6 +1382,7 @@ fun SettingsScreen(
                                         else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
                                     )
                                     .clickable {
+                                        haptic.selection()
                                         viewModel.setLanguage(lang.code)
                                         showLanguageDialog = false
                                     }
@@ -1331,6 +1414,7 @@ fun SettingsScreen(
                                 RadioButton(
                                     selected = isSelected,
                                     onClick = {
+                                        haptic.selection()
                                         viewModel.setLanguage(lang.code)
                                         showLanguageDialog = false
                                     },
@@ -1396,6 +1480,7 @@ fun SettingsScreen(
                                         else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                                     )
                                     .clickable {
+                                        haptic.selection()
                                         viewModel.setCurrency(curr.code, curr.symbol)
                                         showCurrencyDialog = false
                                     }
@@ -1513,10 +1598,13 @@ fun SettingsScreen(
                         Button(
                             onClick = {
                                 if (pin.length != 4) {
+                                    haptic.warning()
                                     pinError = "PIN must be 4 digits"
                                 } else if (pin != confirmPin) {
+                                    haptic.warning()
                                     pinError = strings.pinMismatch
                                 } else {
+                                    haptic.success()
                                     viewModel.setAppLock(true, pin)
                                     showPinSetupDialog = false
                                 }
@@ -1541,6 +1629,7 @@ fun SettingsScreen(
             confirmButton = {
                 Button(
                     onClick = {
+                        haptic.destructive()
                         viewModel.resetAllData {
                             showResetConfirmDialog = false
                         }

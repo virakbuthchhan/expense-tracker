@@ -484,6 +484,10 @@ class ExpenseViewModel(application: Application) : AndroidViewModel(application)
         preferenceRepository.setAnimationsEnabled(enabled)
     }
 
+    fun setHapticEnabled(enabled: Boolean) {
+        preferenceRepository.setHapticEnabled(enabled)
+    }
+
     fun setOnboardingCompleted(completed: Boolean) {
         preferenceRepository.setOnboardingCompleted(completed)
     }
