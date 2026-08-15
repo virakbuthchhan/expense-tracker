@@ -2,8 +2,7 @@ package com.example.ui.screens
 
 import android.content.Intent
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import com.example.findMainActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -74,24 +73,18 @@ fun ExportScreen(
     val preferences by viewModel.userPreferences.collectAsStateWithLifecycle()
     var isGeneratingPdf by remember { mutableStateOf(false) }
 
-    // Storage Access Framework (SAF) Create Document Launcher for PDF
-    val createPdfDocLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("application/pdf")
-    ) { destinationUri ->
-        if (destinationUri != null) {
-            isGeneratingPdf = true
-            viewModel.exportPdfToStorageUri(
-                context = context,
-                targetUri = destinationUri,
-                appStrings = strings
-            ) { success ->
-                isGeneratingPdf = false
-                if (success) {
-                    viewModel.recordExportDone()
-                    Toast.makeText(context, strings.pdfExportSuccess, Toast.LENGTH_LONG).show()
-                } else {
-                    Toast.makeText(context, strings.pdfExportError, Toast.LENGTH_LONG).show()
-                }
+    fun sharePdf() {
+        isGeneratingPdf = true
+        viewModel.preparePdfForSharing(context, strings) { pdfUri ->
+            isGeneratingPdf = false
+            if (pdfUri != null) {
+                viewModel.recordExportDone()
+                val shareIntent = PdfExportService.createSharePdfIntent(context, pdfUri, "Financial_Statement.pdf")
+                val chooser = Intent.createChooser(shareIntent, strings.shareOrPrintPdf)
+                chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(chooser)
+            } else {
+                Toast.makeText(context, strings.pdfExportError, Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -108,19 +101,31 @@ fun ExportScreen(
         context.startActivity(shareIntent)
     }
 
-    fun sharePdf() {
-        isGeneratingPdf = true
-        viewModel.preparePdfForSharing(context, strings) { pdfUri ->
-            isGeneratingPdf = false
-            if (pdfUri != null) {
-                viewModel.recordExportDone()
-                val shareIntent = PdfExportService.createSharePdfIntent(context, pdfUri, "Financial_Statement.pdf")
-                val chooser = Intent.createChooser(shareIntent, strings.shareOrPrintPdf)
-                chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                context.startActivity(chooser)
-            } else {
-                Toast.makeText(context, strings.pdfExportError, Toast.LENGTH_SHORT).show()
+    fun savePdfToStorage() {
+        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(Date())
+        val fileName = "financial_statement_$timeStamp.pdf"
+        val activity = context.findMainActivity()
+        if (activity != null) {
+            activity.launchCreateDocument("application/pdf", fileName) { destinationUri ->
+                if (destinationUri != null) {
+                    isGeneratingPdf = true
+                    viewModel.exportPdfToStorageUri(
+                        context = context,
+                        targetUri = destinationUri,
+                        appStrings = strings
+                    ) { success ->
+                        isGeneratingPdf = false
+                        if (success) {
+                            viewModel.recordExportDone()
+                            Toast.makeText(context, strings.pdfExportSuccess, Toast.LENGTH_LONG).show()
+                        } else {
+                            Toast.makeText(context, strings.pdfExportError, Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }
             }
+        } else {
+            sharePdf()
         }
     }
 
@@ -312,8 +317,7 @@ fun ExportScreen(
                     // Primary Action: Device File System Storage Intent
                     Button(
                         onClick = {
-                            val timeStamp = SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(Date())
-                            createPdfDocLauncher.launch("financial_statement_$timeStamp.pdf")
+                            savePdfToStorage()
                         },
                         enabled = !isGeneratingPdf,
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),

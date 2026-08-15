@@ -1,9 +1,9 @@
 package com.example.ui.screens
 
+import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import com.example.findMainActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -153,22 +153,30 @@ fun ImportScreen(
     var importResult by remember { mutableStateOf<ImportExecutionResult?>(null) }
     var showSuccessDialog by remember { mutableStateOf(false) }
 
-    // File Picker
-    val filePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        if (uri != null) {
-            scope.launch {
-                try {
-                    val content = TsvCsvImportService.readFromUri(context, uri)
-                    rawText = content
-                    val detected = TsvCsvImportService.detectDelimiter(content)
-                    selectedDelimiter = detected
-                    Toast.makeText(context, "Loaded file (${content.lines().size} lines)", Toast.LENGTH_SHORT).show()
-                } catch (e: Exception) {
-                    Toast.makeText(context, "Error reading file: ${e.message}", Toast.LENGTH_LONG).show()
+    fun pickFileSafely() {
+        val activity = context.findMainActivity()
+        if (activity != null) {
+            activity.launchFilePicker { uri: Uri? ->
+                if (uri != null) {
+                    scope.launch {
+                        try {
+                            val content = TsvCsvImportService.readFromUri(context, uri)
+                            if (content.isNotBlank()) {
+                                rawText = content
+                                val detected = TsvCsvImportService.detectDelimiter(content)
+                                selectedDelimiter = detected
+                                Toast.makeText(context, "Loaded file (${content.lines().filter { it.isNotBlank() }.size} lines)", Toast.LENGTH_SHORT).show()
+                            } else {
+                                Toast.makeText(context, "Selected file is empty", Toast.LENGTH_SHORT).show()
+                            }
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "Error reading file: ${e.message}", Toast.LENGTH_LONG).show()
+                        }
+                    }
                 }
             }
+        } else {
+            Toast.makeText(context, "Cannot open file picker", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -274,7 +282,7 @@ fun ImportScreen(
                         defaultType = defaultTransactionType,
                         onDefaultTypeChanged = { defaultTransactionType = it },
                         onPickFileClick = {
-                            filePickerLauncher.launch("*/*")
+                            pickFileSafely()
                         },
                         onLoadSampleClick = {
                             rawText = TsvCsvImportService.SAMPLE_TSV_DATA
