@@ -1,6 +1,6 @@
 {
-  "name": "Expense Tracker",
-  "description": "A 100% offline mobile expense and budget tracker featuring the Geometric Balance design theme, custom analytics charts, and data export.",
+  "name": "កត់លុយ (KotLuy)",
+  "description": "កត់លុយ (KotLuy) - Offline personal expense and budget tracker with multi-currency, analytics charts, tactile haptics, and Khmer language support.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

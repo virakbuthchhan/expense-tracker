@@ -265,7 +265,7 @@ data class AppStrings(
 )
 
 val EnglishStrings = AppStrings(
-    appName = "Expense Tracker",
+    appName = "កត់លុយ (KotLuy)",
     navHome = "Home",
     navHistory = "History",
     navAnalytics = "Analytics",
@@ -513,7 +513,7 @@ val EnglishStrings = AppStrings(
 )
 
 val KhmerStrings = AppStrings(
-    appName = "កម្មវិធីតាមដានចំណាយ",
+    appName = "កត់លុយ (KotLuy)",
     navHome = "ទំព័រដើម",
     navHistory = "ប្រវត្តិ",
     navAnalytics = "ការវិភាគ",

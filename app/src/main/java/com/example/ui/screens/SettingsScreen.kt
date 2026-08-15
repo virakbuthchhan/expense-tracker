@@ -536,7 +536,7 @@ fun SettingsScreen(
                             onCheckedChange = { enabled ->
                                 viewModel.setHapticEnabled(enabled)
                                 if (enabled) {
-                                    haptic.forceSuccess()
+                                    haptic.success()
                                 }
                             },
                             colors = SwitchDefaults.colors(

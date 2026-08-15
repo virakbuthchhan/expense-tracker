@@ -5,6 +5,7 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    <!-- Rich Lush Green Gradient Background matching KotLuy branding -->
     <path
         android:pathData="M0,0h108v108h-108z">
         <aapt:attr name="android:fillColor">
@@ -15,16 +16,25 @@
                 android:startX="0"
                 android:startY="0"
                 android:type="linear">
-                <item android:color="#0F172A" android:offset="0.0" />
-                <item android:color="#064E3B" android:offset="0.6" />
-                <item android:color="#022C22" android:offset="1.0" />
+                <item android:color="#22C55E" android:offset="0.0" />
+                <item android:color="#16A34A" android:offset="0.35" />
+                <item android:color="#0F766E" android:offset="0.75" />
+                <item android:color="#064E3B" android:offset="1.0" />
             </gradient>
         </aapt:attr>
     </path>
-    <!-- Subtle grid overlay -->
+    <!-- Soft Ambient Radial Vignette -->
     <path
-        android:fillColor="#00000000"
-        android:pathData="M0,36h108M0,72h108M36,0v108M72,0v108"
-        android:strokeWidth="0.5"
-        android:strokeColor="#1A34D399" />
+        android:pathData="M54,0 A54,54 0 1,0 54,108 A54,54 0 1,0 54,0 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:centerX="54"
+                android:centerY="46"
+                android:gradientRadius="50"
+                android:type="radial">
+                <item android:color="#33FFFFFF" android:offset="0.0" />
+                <item android:color="#00000000" android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
 </vector>
