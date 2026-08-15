@@ -411,16 +411,13 @@ fun SpendingTrendBarChart(
                             val y = canvasHeight - barHeight
                             val isSelected = activeIndex == index
 
-                            val primary = MaterialTheme.colorScheme.primary
-                            val primaryContainer = MaterialTheme.colorScheme.primaryContainer
-
                             val brush = if (isSelected) {
                                 Brush.verticalGradient(
                                     colors = listOf(Color(0xFFFFDAD6), ExpenseRed)
                                 )
                             } else {
                                 Brush.verticalGradient(
-                                    colors = listOf(primaryContainer, primary)
+                                    colors = listOf(Color(0xFFFFB5A0), Color(0xFF8F4C38))
                                 )
                             }
 

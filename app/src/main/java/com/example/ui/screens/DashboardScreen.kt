@@ -108,7 +108,7 @@ fun DashboardScreen(
                         Text(
                             text = strings.offlineSecure,
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary,
+                            color = Emerald500,
                             fontWeight = FontWeight.Medium
                         )
                     }
