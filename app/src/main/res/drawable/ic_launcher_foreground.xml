@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Outer Glow / Ambient circle -->
+    <path
+        android:pathData="M54,26 A28,28 0 1,0 54,82 A28,28 0 1,0 54,26 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:centerX="54"
+                android:centerY="54"
+                android:gradientRadius="32"
+                android:type="radial">
+                <item android:color="#3310B981" android:offset="0.0" />
+                <item android:color="#0010B981" android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Main Card/Wallet Body (Fintech card) -->
+    <path
+        android:pathData="M31,37 C31,33.7 33.7,31 37,31 L71,31 C74.3,31 77,33.7 77,37 L77,69 C77,72.3 74.3,75 71,75 L37,75 C33.7,75 31,72.3 31,69 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:angle="135"
+                android:endX="77"
+                android:endY="75"
+                android:startX="31"
+                android:startY="31"
+                android:type="linear">
+                <item android:color="#10B981" android:offset="0.0" />
+                <item android:color="#059669" android:offset="0.5" />
+                <item android:color="#047857" android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Card Top Gloss Stripe -->
+    <path
+        android:fillColor="#26FFFFFF"
+        android:pathData="M31,41 L77,41 L77,47 L31,47 Z" />
+
+    <!-- Card Chip / Badge -->
+    <path
+        android:fillColor="#FCD34D"
+        android:pathData="M37,51 C37,49.9 37.9,49 39,49 L47,49 C48.1,49 49,49.9 49,51 L49,57 C49,58.1 48.1,59 47,59 L39,59 C37.9,59 37,58.1 37,57 Z" />
+
+    <!-- Card Lines / Details -->
+    <path
+        android:fillColor="#E2E8F0"
+        android:pathData="M53,52 L69,52 L69,54 L53,54 Z M53,57 L65,57 L65,59 L53,59 Z" />
+
+    <!-- Rising Growth Arrow Badge -->
+    <path
+        android:pathData="M61,65 L68,58 L73,63 L79,55 L81,57 L74,66 L69,61 L63,68 Z"
+        android:fillColor="#34D399" />
+</vector>
