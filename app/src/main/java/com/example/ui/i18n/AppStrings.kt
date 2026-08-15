@@ -242,7 +242,26 @@ data class AppStrings(
     val importDataAction: String,
     val importDataSubtitle: String,
     val parsingFileProgress: String,
-    val parsingSuccessSnackbar: String
+    val parsingSuccessSnackbar: String,
+
+    // Date & Month filter & Export for History
+    val filterDateMonth: String,
+    val filterAllTime: String,
+    val filterLastMonth: String,
+    val filterCustomDate: String,
+    val filterCustomMonth: String,
+    val exportHistoryAction: String,
+    val exportFormatCsv: String,
+    val exportFormatTsv: String,
+    val exportFormatJson: String,
+    val exportFormatPdf: String,
+    val exportScopeFiltered: String,
+    val exportScopeAll: String,
+    val exportSuccessToast: String,
+    val clearDateFilter: String,
+    val stepSourceShort: String,
+    val stepMappingShort: String,
+    val stepPreviewShort: String
 )
 
 val EnglishStrings = AppStrings(
@@ -472,7 +491,25 @@ val EnglishStrings = AppStrings(
     importDataAction = "Import TSV / CSV Records",
     importDataSubtitle = "Import records from Google Sheets, Excel, or CSV/TSV files with column mapping",
     parsingFileProgress = "Parsing file data...",
-    parsingSuccessSnackbar = "Successfully parsed %d lines. Ready to map columns."
+    parsingSuccessSnackbar = "Successfully parsed %d lines. Ready to map columns.",
+
+    filterDateMonth = "Date / Month",
+    filterAllTime = "All Time",
+    filterLastMonth = "Last Month",
+    filterCustomDate = "Select Date",
+    filterCustomMonth = "Select Month",
+    exportHistoryAction = "Export Transactions",
+    exportFormatCsv = "CSV File (.csv)",
+    exportFormatTsv = "TSV File (.tsv)",
+    exportFormatJson = "JSON File (.json)",
+    exportFormatPdf = "PDF Document (.pdf)",
+    exportScopeFiltered = "Export Filtered (%d records)",
+    exportScopeAll = "Export All (%d records)",
+    exportSuccessToast = "Exported successfully",
+    clearDateFilter = "Clear Date Filter",
+    stepSourceShort = "Source",
+    stepMappingShort = "Mapping",
+    stepPreviewShort = "Preview"
 )
 
 val KhmerStrings = AppStrings(
@@ -702,7 +739,25 @@ val KhmerStrings = AppStrings(
     importDataAction = "នាំចូលកំណត់ត្រា TSV / CSV",
     importDataSubtitle = "នាំចូលប្រតិបត្តិការពីតារាង Google Sheets ឬ CSV ដោយផ្គូផ្គងជួរឈរ",
     parsingFileProgress = "កំពុងវិភាគទិន្នន័យឯកសារ...",
-    parsingSuccessSnackbar = "បានវិភាគដោយជោគជ័យ %d ជួរ។ ត្រៀមផ្គូផ្គងជួរឈរ។"
+    parsingSuccessSnackbar = "បានវិភាគដោយជោគជ័យ %d ជួរ។ ត្រៀមផ្គូផ្គងជួរឈរ។",
+
+    filterDateMonth = "កាលបរិច្ឆេទ / ខែ",
+    filterAllTime = "គ្រប់ពេល",
+    filterLastMonth = "ខែមុន",
+    filterCustomDate = "ជ្រើសកាលបរិច្ឆេទ",
+    filterCustomMonth = "ជ្រើសរើសខែ",
+    exportHistoryAction = "នាំចេញប្រតិបត្តិការ",
+    exportFormatCsv = "ឯកសារ CSV (.csv)",
+    exportFormatTsv = "ឯកសារ TSV (.tsv)",
+    exportFormatJson = "ឯកសារ JSON (.json)",
+    exportFormatPdf = "ឯកសារ PDF (.pdf)",
+    exportScopeFiltered = "នាំចេញទិន្នន័យដែលបានច្រោះ (%d កំណត់ត្រា)",
+    exportScopeAll = "នាំចេញទាំងអស់ (%d កំណត់ត្រា)",
+    exportSuccessToast = "បាននាំចេញដោយជោគជ័យ",
+    clearDateFilter = "សម្អាតតម្រងកាលបរិច្ឆេទ",
+    stepSourceShort = "ប្រភព",
+    stepMappingShort = "ផ្គូផ្គង",
+    stepPreviewShort = "ពិនិត្យមើល"
 )
 
 val LocalAppStrings = staticCompositionLocalOf { EnglishStrings }

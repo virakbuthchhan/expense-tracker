@@ -24,6 +24,16 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
+enum class DateFilterType {
+    ALL_TIME,
+    TODAY,
+    THIS_WEEK,
+    THIS_MONTH,
+    LAST_MONTH,
+    CUSTOM_DATE,
+    CUSTOM_MONTH
+}
+
 data class BudgetWithStatus(
     val budgetId: Int,
     val categoryId: Int,
@@ -71,6 +81,35 @@ class ExpenseViewModel(application: Application) : AndroidViewModel(application)
     private val _selectedMonth = MutableStateFlow(getCurrentMonthString())
     val selectedMonth: StateFlow<String> = _selectedMonth.asStateFlow()
 
+    private val _dateFilterType = MutableStateFlow(DateFilterType.ALL_TIME)
+    val dateFilterType: StateFlow<DateFilterType> = _dateFilterType.asStateFlow()
+
+    private val _customFilterDate = MutableStateFlow<Long?>(null)
+    val customFilterDate: StateFlow<Long?> = _customFilterDate.asStateFlow()
+
+    private val _customFilterMonth = MutableStateFlow<String?>(null)
+    val customFilterMonth: StateFlow<String?> = _customFilterMonth.asStateFlow()
+
+    fun setDateFilterType(type: DateFilterType) {
+        _dateFilterType.value = type
+    }
+
+    fun setCustomFilterDate(dateMillis: Long?) {
+        _customFilterDate.value = dateMillis
+        _dateFilterType.value = DateFilterType.CUSTOM_DATE
+    }
+
+    fun setCustomFilterMonth(monthStr: String?) {
+        _customFilterMonth.value = monthStr
+        _dateFilterType.value = DateFilterType.CUSTOM_MONTH
+    }
+
+    fun clearDateFilter() {
+        _dateFilterType.value = DateFilterType.ALL_TIME
+        _customFilterDate.value = null
+        _customFilterMonth.value = null
+    }
+
     val allTransactions: StateFlow<List<TransactionWithCategory>> = repository.allTransactions
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -112,8 +151,23 @@ class ExpenseViewModel(application: Application) : AndroidViewModel(application)
         allTransactions,
         _searchQuery,
         _selectedTypeFilter,
-        _selectedCategoryFilter
-    ) { transactions, query, typeFilter, categoryFilter ->
+        _selectedCategoryFilter,
+        _dateFilterType,
+        _customFilterDate,
+        _customFilterMonth
+    ) { args: Array<Any?> ->
+        @Suppress("UNCHECKED_CAST")
+        val transactions = args[0] as List<TransactionWithCategory>
+        val query = args[1] as String
+        val typeFilter = args[2] as String
+        val categoryFilter = args[3] as? Int
+        val dateType = args[4] as DateFilterType
+        val customDate = args[5] as? Long
+        val customMonth = args[6] as? String
+
+        val nowCal = Calendar.getInstance()
+        val txCal = Calendar.getInstance()
+
         transactions.filter { tx ->
             val matchesQuery = query.isBlank() ||
                     tx.note.contains(query, ignoreCase = true) ||
@@ -127,7 +181,48 @@ class ExpenseViewModel(application: Application) : AndroidViewModel(application)
 
             val matchesCategory = categoryFilter == null || tx.categoryId == categoryFilter
 
-            matchesQuery && matchesType && matchesCategory
+            val matchesDate = when (dateType) {
+                DateFilterType.ALL_TIME -> true
+                DateFilterType.TODAY -> {
+                    txCal.timeInMillis = tx.date
+                    nowCal.get(Calendar.YEAR) == txCal.get(Calendar.YEAR) &&
+                            nowCal.get(Calendar.DAY_OF_YEAR) == txCal.get(Calendar.DAY_OF_YEAR)
+                }
+                DateFilterType.THIS_WEEK -> {
+                    txCal.timeInMillis = tx.date
+                    nowCal.get(Calendar.YEAR) == txCal.get(Calendar.YEAR) &&
+                            nowCal.get(Calendar.WEEK_OF_YEAR) == txCal.get(Calendar.WEEK_OF_YEAR)
+                }
+                DateFilterType.THIS_MONTH -> {
+                    txCal.timeInMillis = tx.date
+                    nowCal.get(Calendar.YEAR) == txCal.get(Calendar.YEAR) &&
+                            nowCal.get(Calendar.MONTH) == txCal.get(Calendar.MONTH)
+                }
+                DateFilterType.LAST_MONTH -> {
+                    val lastMonthCal = Calendar.getInstance().apply { add(Calendar.MONTH, -1) }
+                    txCal.timeInMillis = tx.date
+                    lastMonthCal.get(Calendar.YEAR) == txCal.get(Calendar.YEAR) &&
+                            lastMonthCal.get(Calendar.MONTH) == txCal.get(Calendar.MONTH)
+                }
+                DateFilterType.CUSTOM_DATE -> {
+                    if (customDate == null) true
+                    else {
+                        val targetCal = Calendar.getInstance().apply { timeInMillis = customDate }
+                        txCal.timeInMillis = tx.date
+                        targetCal.get(Calendar.YEAR) == txCal.get(Calendar.YEAR) &&
+                                targetCal.get(Calendar.DAY_OF_YEAR) == txCal.get(Calendar.DAY_OF_YEAR)
+                    }
+                }
+                DateFilterType.CUSTOM_MONTH -> {
+                    if (customMonth.isNullOrBlank()) true
+                    else {
+                        val (mStart, mEnd) = getMonthStartAndEndMillis(customMonth)
+                        tx.date in mStart..mEnd
+                    }
+                }
+            }
+
+            matchesQuery && matchesType && matchesCategory && matchesDate
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -462,26 +557,32 @@ class ExpenseViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun generateCsvExport(): String {
-        return repository.generateCsvExport(allTransactions.value)
+    fun generateCsvExport(transactions: List<TransactionWithCategory>? = null): String {
+        return repository.generateCsvExport(transactions ?: allTransactions.value)
     }
 
-    fun generateJsonExport(): String {
-        return repository.generateJsonExport(allTransactions.value)
+    fun generateTsvExport(transactions: List<TransactionWithCategory>? = null): String {
+        return repository.generateTsvExport(transactions ?: allTransactions.value)
+    }
+
+    fun generateJsonExport(transactions: List<TransactionWithCategory>? = null): String {
+        return repository.generateJsonExport(transactions ?: allTransactions.value)
     }
 
     fun exportPdfToStorageUri(
         context: android.content.Context,
         targetUri: android.net.Uri,
         appStrings: com.example.ui.i18n.AppStrings,
+        transactions: List<TransactionWithCategory>? = null,
         onResult: (Boolean) -> Unit
     ) {
         viewModelScope.launch {
             val prefs = userPreferences.value
+            val list = transactions ?: allTransactions.value
             val success = com.example.data.service.PdfExportService.exportToStorageUri(
                 context = context,
                 targetUri = targetUri,
-                transactions = allTransactions.value,
+                transactions = list,
                 currencyCode = prefs.currencyCode,
                 currencySymbol = prefs.currencySymbol,
                 appStrings = appStrings
@@ -493,14 +594,16 @@ class ExpenseViewModel(application: Application) : AndroidViewModel(application)
     fun preparePdfForSharing(
         context: android.content.Context,
         appStrings: com.example.ui.i18n.AppStrings,
+        transactions: List<TransactionWithCategory>? = null,
         onReady: (android.net.Uri?) -> Unit
     ) {
         viewModelScope.launch {
             try {
                 val prefs = userPreferences.value
+                val list = transactions ?: allTransactions.value
                 val uri = com.example.data.service.PdfExportService.savePdfToCacheFile(
                     context = context,
-                    transactions = allTransactions.value,
+                    transactions = list,
                     currencyCode = prefs.currencyCode,
                     currencySymbol = prefs.currencySymbol,
                     appStrings = appStrings

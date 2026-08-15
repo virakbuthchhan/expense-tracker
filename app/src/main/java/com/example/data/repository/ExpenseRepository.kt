@@ -226,6 +226,19 @@ class ExpenseRepository(
         return sb.toString()
     }
 
+    fun generateTsvExport(transactions: List<TransactionWithCategory>): String {
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+        val sb = StringBuilder()
+        sb.append("ID\tDate\tType\tCategory\tAmount\tNote\n")
+        transactions.forEach { t ->
+            val dateStr = dateFormat.format(Date(t.date))
+            val safeNote = t.note.replace("\t", " ").replace("\n", " ")
+            val safeCategory = t.categoryName.replace("\t", " ").replace("\n", " ")
+            sb.append("${t.id}\t$dateStr\t${t.type}\t$safeCategory\t${String.format(Locale.US, "%.2f", t.amount)}\t$safeNote\n")
+        }
+        return sb.toString()
+    }
+
     fun generateJsonExport(transactions: List<TransactionWithCategory>): String {
         val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
         val sb = StringBuilder()

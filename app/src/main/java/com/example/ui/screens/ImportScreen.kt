@@ -1,14 +1,13 @@
 package com.example.ui.screens
 
-import android.content.Intent
+import android.content.ClipDescription
+import android.content.ClipboardManager
+import android.content.Context
 import android.net.Uri
 import android.widget.Toast
-import com.example.findMainActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -30,26 +30,21 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.FileUpload
-import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.Paid
 import androidx.compose.material.icons.filled.RemoveDone
-import androidx.compose.material.icons.filled.RestartAlt
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.TableChart
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -70,6 +65,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
@@ -94,8 +90,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -107,6 +103,7 @@ import com.example.data.service.ImportPreviewItem
 import com.example.data.service.ImportTargetField
 import com.example.data.service.ParsedRawTable
 import com.example.data.service.TsvCsvImportService
+import com.example.findMainActivity
 import com.example.ui.i18n.LocalAppStrings
 import com.example.ui.theme.Emerald500
 import com.example.ui.theme.ExpenseRed
@@ -343,7 +340,8 @@ fun ImportScreen(
                     )
                 }
             }
-            // Stepper Tabs
+
+            // High-Polish Responsive Stepper
             ImportStepperHeader(
                 currentStep = currentStep,
                 onStepClick = { step ->
@@ -374,23 +372,19 @@ fun ImportScreen(
                         defaultType = defaultTransactionType,
                         onDefaultTypeChanged = { defaultTransactionType = it },
                         isParsing = isParsing,
-                        onPickFileClick = {
-                            pickFileSafely()
-                        },
+                        onPickFileClick = { pickFileSafely() },
                         onLoadSampleClick = {
                             rawText = TsvCsvImportService.SAMPLE_TSV_DATA
                             selectedDelimiter = ImportDelimiter.TAB
                             hasHeaderRow = true
                             scope.launch {
                                 snackbarHostState.showSnackbar(
-                                    message = "Loaded sample TSV data. Tap 'Proceed to Mapping' or edit format.",
+                                    message = "Loaded sample TSV data. Tap 'Proceed to Mapping'.",
                                     withDismissAction = true
                                 )
                             }
                         },
-                        onContinueClick = {
-                            parseAndGoToMapping()
-                        }
+                        onContinueClick = { parseAndGoToMapping() }
                     )
 
                     1 -> StepColumnMapping(
@@ -451,17 +445,16 @@ fun ImportScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Default.CheckCircle,
+                        imageVector = Icons.Default.Check,
                         contentDescription = "Success",
                         tint = Emerald500,
-                        modifier = Modifier.size(36.dp)
+                        modifier = Modifier.size(32.dp)
                     )
                 }
             },
             title = {
                 Text(
                     text = strings.importSuccessTitle,
-                    style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
@@ -470,13 +463,13 @@ fun ImportScreen(
             text = {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Text(
                         text = String.format(Locale.getDefault(), strings.importSuccessMessage, result.totalImported),
                         style = MaterialTheme.typography.bodyMedium,
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
                     )
 
                     Card(
@@ -486,13 +479,13 @@ fun ImportScreen(
                     ) {
                         Column(
                             modifier = Modifier.padding(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text(text = strings.recordsFoundCount, style = MaterialTheme.typography.bodySmall)
+                                Text(text = strings.validRecordsCount, style = MaterialTheme.typography.bodySmall)
                                 Text(text = "${result.totalImported}", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
                             }
                             Row(
@@ -551,45 +544,58 @@ fun ImportStepperHeader(
     onStepClick: (Int) -> Unit
 ) {
     val strings = LocalAppStrings.current
-    val steps = listOf(
-        strings.importSourceStep,
-        strings.importMappingStep,
-        strings.importPreviewStep
+    val stepLabels = listOf(
+        strings.stepSourceShort,
+        strings.stepMappingShort,
+        strings.stepPreviewShort
     )
 
     Surface(
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+                .padding(horizontal = 14.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            steps.forEachIndexed { index, stepName ->
+            stepLabels.forEachIndexed { index, stepLabel ->
                 val isActive = currentStep == index
                 val isCompleted = currentStep > index
 
-                val indicatorColor = when {
+                val containerBg = when {
+                    isActive -> MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                    isCompleted -> Emerald500.copy(alpha = 0.12f)
+                    else -> Color.Transparent
+                }
+
+                val contentColor = when {
                     isActive -> MaterialTheme.colorScheme.primary
                     isCompleted -> Emerald500
-                    else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                    else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                 }
 
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
+                        .weight(1f)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(containerBg)
                         .clickable { onStepClick(index) }
-                        .padding(horizontal = 6.dp, vertical = 4.dp)
+                        .padding(horizontal = 6.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(22.dp)
+                            .size(20.dp)
                             .clip(CircleShape)
-                            .background(indicatorColor),
+                            .background(
+                                if (isActive) MaterialTheme.colorScheme.primary
+                                else if (isCompleted) Emerald500
+                                else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.25f)
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
                         if (isCompleted) {
@@ -597,7 +603,7 @@ fun ImportStepperHeader(
                                 imageVector = Icons.Default.Check,
                                 contentDescription = "Done",
                                 tint = Color.White,
-                                modifier = Modifier.size(14.dp)
+                                modifier = Modifier.size(12.dp)
                             )
                         } else {
                             Text(
@@ -610,19 +616,12 @@ fun ImportStepperHeader(
                     }
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = stepName.substringAfter(". "),
+                        text = stepLabel,
                         style = MaterialTheme.typography.labelMedium,
-                        fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal,
-                        color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                if (index < steps.size - 1) {
-                    Box(
-                        modifier = Modifier
-                            .width(16.dp)
-                            .height(1.dp)
-                            .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f))
+                        fontWeight = if (isActive) FontWeight.Bold else FontWeight.Medium,
+                        color = contentColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
@@ -646,6 +645,7 @@ fun StepSourceInput(
     onContinueClick: () -> Unit
 ) {
     val strings = LocalAppStrings.current
+    val context = LocalContext.current
     val scrollState = rememberScrollState()
 
     Column(
@@ -653,7 +653,7 @@ fun StepSourceInput(
             .fillMaxSize()
             .verticalScroll(scrollState)
             .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         // Quick Action Buttons Row
         Row(
@@ -665,72 +665,71 @@ fun StepSourceInput(
                 enabled = !isParsing,
                 shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
                 modifier = Modifier
                     .weight(1f)
-                    .height(48.dp)
+                    .height(46.dp)
             ) {
-                if (isParsing) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(18.dp),
-                        strokeWidth = 2.dp,
-                        color = Color.White
-                    )
-                } else {
-                    Icon(imageVector = Icons.Default.FileUpload, contentDescription = null, modifier = Modifier.size(18.dp))
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(text = strings.pickFileButton, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Icon(imageVector = Icons.Default.FileUpload, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(text = strings.pickFileButton, fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.SemiBold)
             }
 
             OutlinedButton(
                 onClick = onLoadSampleClick,
                 enabled = !isParsing,
                 shape = RoundedCornerShape(14.dp),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
                 modifier = Modifier
                     .weight(1f)
-                    .height(48.dp)
+                    .height(46.dp)
             ) {
                 Icon(imageVector = Icons.Default.TableChart, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(text = strings.loadSampleDataButton, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(text = strings.loadSampleDataButton, fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.SemiBold)
             }
         }
 
         // Format Settings Card
         Card(
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(14.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)),
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier.padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Text(
-                    text = strings.delimiterLabel,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold
-                )
-
+                // Delimiter selection
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    ImportDelimiter.values().forEach { delimiter ->
-                        FilterChip(
-                            selected = selectedDelimiter == delimiter,
-                            onClick = { onDelimiterSelected(delimiter) },
-                            label = { Text(delimiter.label, fontSize = 12.sp) },
-                            shape = RoundedCornerShape(10.dp),
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    Text(
+                        text = strings.delimiterLabel,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        ImportDelimiter.values().forEach { delimiter ->
+                            FilterChip(
+                                selected = selectedDelimiter == delimiter,
+                                onClick = { onDelimiterSelected(delimiter) },
+                                label = { Text(delimiter.label, fontSize = 11.5.sp) },
+                                shape = RoundedCornerShape(8.dp),
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
                             )
-                        )
+                        }
                     }
                 }
 
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
 
                 // Toggle Header Row
                 Row(
@@ -738,18 +737,11 @@ fun StepSourceInput(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = strings.hasHeaderLabel,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Text(
-                            text = "First line is used as column names",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    Text(
+                        text = strings.hasHeaderLabel,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Medium
+                    )
                     Switch(
                         checked = hasHeaderRow,
                         onCheckedChange = onHasHeaderRowChanged,
@@ -757,7 +749,7 @@ fun StepSourceInput(
                     )
                 }
 
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
 
                 // Default Type
                 Row(
@@ -767,29 +759,29 @@ fun StepSourceInput(
                 ) {
                     Text(
                         text = strings.defaultTypeLabel,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Medium
                     )
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         FilterChip(
                             selected = defaultType == "expense",
                             onClick = { onDefaultTypeChanged("expense") },
-                            label = { Text(strings.filterExpense) },
-                            shape = RoundedCornerShape(10.dp)
+                            label = { Text(strings.filterExpense, fontSize = 11.5.sp) },
+                            shape = RoundedCornerShape(8.dp)
                         )
                         FilterChip(
                             selected = defaultType == "income",
                             onClick = { onDefaultTypeChanged("income") },
-                            label = { Text(strings.filterIncome) },
-                            shape = RoundedCornerShape(10.dp)
+                            label = { Text(strings.filterIncome, fontSize = 11.5.sp) },
+                            shape = RoundedCornerShape(8.dp)
                         )
                     }
                 }
             }
         }
 
-        // Raw Text Box
+        // Raw Text Box with Paste & Clear controls
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -802,12 +794,52 @@ fun StepSourceInput(
                     fontWeight = FontWeight.SemiBold
                 )
 
-                if (rawText.isNotBlank()) {
-                    Text(
-                        text = "${rawText.lines().filter { it.isNotBlank() }.size} lines",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    if (rawText.isNotBlank()) {
+                        Text(
+                            text = "${rawText.lines().filter { it.isNotBlank() }.size} lines",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        IconButton(
+                            onClick = { onRawTextChanged("") },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Clear,
+                                contentDescription = "Clear",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+
+                    TextButton(
+                        onClick = {
+                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+                            if (clipboard != null && clipboard.hasPrimaryClip()) {
+                                val clip = clipboard.primaryClip
+                                if (clip != null && clip.itemCount > 0) {
+                                    val text = clip.getItemAt(0).coerceToText(context).toString()
+                                    if (text.isNotBlank()) {
+                                        onRawTextChanged(text)
+                                        val detected = TsvCsvImportService.detectDelimiter(text)
+                                        onDelimiterSelected(detected)
+                                    }
+                                }
+                            }
+                        },
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                    ) {
+                        Icon(imageVector = Icons.Default.ContentPaste, contentDescription = null, modifier = Modifier.size(14.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Paste", fontSize = 12.sp)
+                    }
                 }
             }
 
@@ -815,12 +847,12 @@ fun StepSourceInput(
                 value = rawText,
                 onValueChange = onRawTextChanged,
                 placeholder = {
-                    Text(strings.pastePlaceholder, fontSize = 13.sp)
+                    Text(strings.pastePlaceholder, fontSize = 12.5.sp)
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(200.dp),
-                shape = RoundedCornerShape(16.dp),
+                    .height(180.dp),
+                shape = RoundedCornerShape(14.dp),
                 textStyle = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp)
             )
         }
@@ -832,11 +864,11 @@ fun StepSourceInput(
             shape = RoundedCornerShape(14.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(50.dp)
+                .height(48.dp)
         ) {
             if (isParsing) {
                 CircularProgressIndicator(
-                    modifier = Modifier.size(20.dp),
+                    modifier = Modifier.size(18.dp),
                     strokeWidth = 2.dp,
                     color = MaterialTheme.colorScheme.onPrimary
                 )
@@ -870,21 +902,21 @@ fun StepColumnMapping(
     ) {
         // Explanatory Banner
         Card(
-            shape = RoundedCornerShape(14.dp),
+            shape = RoundedCornerShape(12.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)),
             modifier = Modifier.fillMaxWidth()
         ) {
             Row(
-                modifier = Modifier.padding(12.dp),
+                modifier = Modifier.padding(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
                     imageVector = Icons.Default.Info,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(18.dp)
                 )
-                Spacer(modifier = Modifier.width(10.dp))
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = strings.mapColumnSubtitle,
                     style = MaterialTheme.typography.bodySmall,
@@ -900,7 +932,7 @@ fun StepColumnMapping(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             itemsIndexed(parsedTable.headerNames) { colIndex, headerName ->
                 val currentTarget = columnMappings.getOrNull(colIndex) ?: ImportTargetField.SKIP
@@ -916,19 +948,19 @@ fun StepColumnMapping(
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
         // Actions
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             OutlinedButton(
                 onClick = onBackClick,
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
                     .weight(1f)
-                    .height(48.dp)
+                    .height(46.dp)
             ) {
                 Text(strings.cancel)
             }
@@ -936,13 +968,13 @@ fun StepColumnMapping(
             Button(
                 onClick = onProceedClick,
                 enabled = hasAmountMapped,
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
                     .weight(1.5f)
-                    .height(48.dp)
+                    .height(46.dp)
             ) {
                 Text(strings.readyToPreview, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(6.dp))
                 Icon(imageVector = Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, modifier = Modifier.size(18.dp))
             }
         }
@@ -983,7 +1015,7 @@ fun ColumnMappingCard(
     val isMapped = currentTarget != ImportTargetField.SKIP
 
     Card(
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isMapped) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
         ),
@@ -992,8 +1024,8 @@ fun ColumnMappingCard(
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
-            modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -1006,7 +1038,7 @@ fun ColumnMappingCard(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(28.dp)
+                            .size(24.dp)
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.primaryContainer),
                         contentAlignment = Alignment.Center
@@ -1014,11 +1046,11 @@ fun ColumnMappingCard(
                         Text(
                             text = "${('A'.code + columnIndex).toChar()}",
                             fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp,
+                            fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
-                    Spacer(modifier = Modifier.width(10.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = headerName,
                         style = MaterialTheme.typography.titleMedium,
@@ -1031,26 +1063,26 @@ fun ColumnMappingCard(
                 // Field Selector Dropdown Anchor
                 Box {
                     Surface(
-                        shape = RoundedCornerShape(10.dp),
+                        shape = RoundedCornerShape(8.dp),
                         color = if (isMapped) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
                         modifier = Modifier
-                            .clip(RoundedCornerShape(10.dp))
+                            .clip(RoundedCornerShape(8.dp))
                             .clickable { showDropdown = true }
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Icon(
                                 imageVector = targetFieldIcon,
                                 contentDescription = null,
-                                modifier = Modifier.size(16.dp),
+                                modifier = Modifier.size(14.dp),
                                 tint = if (isMapped) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
                                 text = targetFieldLabel,
-                                style = MaterialTheme.typography.labelMedium,
+                                style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = if (isMapped) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -1130,57 +1162,75 @@ fun StepPreviewAndImport(
     onImportClick: () -> Unit
 ) {
     val strings = LocalAppStrings.current
+    var previewSearchQuery by remember { mutableStateOf("") }
+    var filterType by remember { mutableStateOf("all") } // all, expense, income
 
     val totalRecords = previewItems.size
     val selectedCount = previewItems.count { it.isSelected && it.isValid }
     val selectedSum = previewItems.filter { it.isSelected && it.isValid }.sumOf { it.amount }
 
+    // Filter preview items based on user search and filter
+    val displayedItems = previewItems.mapIndexed { index, item -> Pair(index, item) }.filter { (_, item) ->
+        val matchesQuery = previewSearchQuery.isBlank() ||
+                item.description.contains(previewSearchQuery, ignoreCase = true) ||
+                item.categoryName.contains(previewSearchQuery, ignoreCase = true) ||
+                item.dateFormatted.contains(previewSearchQuery, ignoreCase = true)
+
+        val matchesType = when (filterType) {
+            "expense" -> item.type == "expense"
+            "income" -> item.type == "income"
+            else -> true
+        }
+
+        matchesQuery && matchesType
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = 16.dp, vertical = 6.dp)
     ) {
         // Summary Metrics Bar
         Card(
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+            shape = RoundedCornerShape(14.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)),
             modifier = Modifier.fillMaxWidth()
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(14.dp),
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
                 horizontalArrangement = Arrangement.SpaceAround,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = strings.recordsFoundCount, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(text = strings.recordsFoundCount, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                     Text(text = "$totalRecords", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 }
 
                 Box(
                     modifier = Modifier
-                        .height(30.dp)
+                        .height(24.dp)
                         .width(1.dp)
                         .background(MaterialTheme.colorScheme.outlineVariant)
                 )
 
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = strings.validRecordsCount, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(text = strings.validRecordsCount, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                     Text(text = "$selectedCount", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Emerald500)
                 }
 
                 Box(
                     modifier = Modifier
-                        .height(30.dp)
+                        .height(24.dp)
                         .width(1.dp)
                         .background(MaterialTheme.colorScheme.outlineVariant)
                 )
 
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = strings.totalAmountToImport, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(text = strings.totalAmountToImport, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                     Text(
-                        text = "$currencySymbol${String.format(Locale.US, "%.2f", selectedSum)}",
+                        text = "$currencySymbol${String.format(Locale.US, "%,.2f", selectedSum)}",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
@@ -1189,79 +1239,140 @@ fun StepPreviewAndImport(
             }
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        // Select All / Deselect All Controls
+        // Search & Controls in Preview
+        OutlinedTextField(
+            value = previewSearchQuery,
+            onValueChange = { previewSearchQuery = it },
+            placeholder = { Text(strings.searchPlaceholder, fontSize = 12.sp) },
+            leadingIcon = {
+                Icon(imageVector = Icons.Default.Search, contentDescription = null, modifier = Modifier.size(16.dp))
+            },
+            trailingIcon = {
+                if (previewSearchQuery.isNotBlank()) {
+                    IconButton(onClick = { previewSearchQuery = "" }) {
+                        Icon(imageVector = Icons.Default.Clear, contentDescription = "Clear", modifier = Modifier.size(16.dp))
+                    }
+                }
+            },
+            singleLine = true,
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(46.dp)
+        )
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        // Select All / Deselect All Controls and Filter Chips Row
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "Preview Transactions ($selectedCount selected)",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold
-            )
-
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                TextButton(onClick = { onSelectAll(true) }) {
-                    Icon(imageVector = Icons.Default.DoneAll, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(strings.selectAll, fontSize = 12.sp)
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.weight(1f)
+            ) {
+                item {
+                    FilterChip(
+                        selected = filterType == "all",
+                        onClick = { filterType = "all" },
+                        label = { Text("${strings.filterAll} (${previewItems.size})", fontSize = 11.sp) },
+                        shape = RoundedCornerShape(8.dp)
+                    )
                 }
-                TextButton(onClick = { onSelectAll(false) }) {
-                    Icon(imageVector = Icons.Default.RemoveDone, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(strings.deselectAll, fontSize = 12.sp)
+                item {
+                    FilterChip(
+                        selected = filterType == "expense",
+                        onClick = { filterType = "expense" },
+                        label = { Text("${strings.filterExpense} (${previewItems.count { it.type == "expense" }})", fontSize = 11.sp) },
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                }
+                item {
+                    FilterChip(
+                        selected = filterType == "income",
+                        onClick = { filterType = "income" },
+                        label = { Text("${strings.filterIncome} (${previewItems.count { it.type == "income" }})", fontSize = 11.sp) },
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                }
+            }
+
+            Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                TextButton(
+                    onClick = { onSelectAll(true) },
+                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
+                ) {
+                    Icon(imageVector = Icons.Default.DoneAll, contentDescription = null, modifier = Modifier.size(14.dp))
+                    Spacer(modifier = Modifier.width(3.dp))
+                    Text(strings.selectAll, fontSize = 11.sp)
+                }
+                TextButton(
+                    onClick = { onSelectAll(false) },
+                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
+                ) {
+                    Icon(imageVector = Icons.Default.RemoveDone, contentDescription = null, modifier = Modifier.size(14.dp))
+                    Spacer(modifier = Modifier.width(3.dp))
+                    Text(strings.deselectAll, fontSize = 11.sp)
                 }
             }
         }
+
+        Spacer(modifier = Modifier.height(4.dp))
 
         // Transactions List
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+            contentPadding = PaddingValues(bottom = 6.dp)
         ) {
-            itemsIndexed(previewItems) { index, item ->
+            itemsIndexed(displayedItems) { _, (originalIndex, item) ->
                 PreviewItemCard(
                     item = item,
                     currencySymbol = currencySymbol,
-                    onToggle = { onToggleItem(index) }
+                    onToggle = { onToggleItem(originalIndex) }
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(6.dp))
 
         // Actions
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             OutlinedButton(
                 onClick = onBackClick,
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(12.dp),
                 enabled = !isImporting,
                 modifier = Modifier
                     .weight(1f)
-                    .height(50.dp)
+                    .height(48.dp)
             ) {
-                Text("Mapping")
+                Text(strings.stepMappingShort)
             }
 
             Button(
                 onClick = onImportClick,
                 enabled = selectedCount > 0 && !isImporting,
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Emerald500),
                 modifier = Modifier
                     .weight(2f)
-                    .height(50.dp)
+                    .height(48.dp)
             ) {
                 if (isImporting) {
-                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Importing...", fontWeight = FontWeight.Bold)
                 } else {
@@ -1285,66 +1396,64 @@ fun PreviewItemCard(
     val amountColor = if (isExpense) ExpenseRed else Emerald500
 
     Card(
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (item.isSelected && item.isValid) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f)
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = if (item.isSelected && item.isValid) 1.dp else 0.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(12.dp))
             .clickable(enabled = item.isValid) { onToggle() }
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(horizontal = 10.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Checkbox(
                 checked = item.isSelected && item.isValid,
                 onCheckedChange = { onToggle() },
                 enabled = item.isValid,
-                colors = CheckboxDefaults.colors(checkedColor = Emerald500)
+                colors = CheckboxDefaults.colors(checkedColor = Emerald500),
+                modifier = Modifier.size(28.dp)
             )
 
-            Spacer(modifier = Modifier.width(4.dp))
+            Spacer(modifier = Modifier.width(6.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Text(
-                        text = item.description,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
+                Text(
+                    text = item.description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.padding(top = 2.dp)
                 ) {
                     Text(
                         text = item.dateFormatted,
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 11.sp
                     )
 
                     Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+                        shape = RoundedCornerShape(4.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
                     ) {
                         Text(
                             text = item.categoryName,
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                            maxLines = 1
+                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp),
+                            maxLines = 1,
+                            fontSize = 10.5.sp
                         )
                     }
                 }
@@ -1360,11 +1469,11 @@ fun PreviewItemCard(
                 }
             }
 
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(6.dp))
 
             Text(
                 text = "$amountPrefix$currencySymbol${String.format(Locale.US, "%.2f", item.amount)}",
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 color = if (item.isValid) amountColor else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
             )
