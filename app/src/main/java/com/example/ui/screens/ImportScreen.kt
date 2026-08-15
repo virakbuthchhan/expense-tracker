@@ -66,10 +66,14 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -125,12 +129,14 @@ fun ImportScreen(
 
     // 0: Source Input, 1: Column Mapping, 2: Preview & Import
     var currentStep by remember { mutableIntStateOf(0) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
     // Source Data State
     var rawText by remember { mutableStateOf("") }
     var selectedDelimiter by remember { mutableStateOf(ImportDelimiter.TAB) }
     var hasHeaderRow by remember { mutableStateOf(true) }
     var defaultTransactionType by remember { mutableStateOf("expense") }
+    var isParsing by remember { mutableStateOf(false) }
 
     // Parsed Data State
     var parsedTable by remember {
@@ -159,18 +165,32 @@ fun ImportScreen(
             activity.launchFilePicker { uri: Uri? ->
                 if (uri != null) {
                     scope.launch {
+                        isParsing = true
                         try {
                             val content = TsvCsvImportService.readFromUri(context, uri)
                             if (content.isNotBlank()) {
                                 rawText = content
                                 val detected = TsvCsvImportService.detectDelimiter(content)
                                 selectedDelimiter = detected
-                                Toast.makeText(context, "Loaded file (${content.lines().filter { it.isNotBlank() }.size} lines)", Toast.LENGTH_SHORT).show()
+                                val lineCount = content.lines().filter { it.isNotBlank() }.size
+                                val msg = String.format(Locale.getDefault(), strings.parsingSuccessSnackbar, lineCount)
+                                snackbarHostState.showSnackbar(
+                                    message = msg,
+                                    withDismissAction = true
+                                )
                             } else {
-                                Toast.makeText(context, "Selected file is empty", Toast.LENGTH_SHORT).show()
+                                snackbarHostState.showSnackbar(
+                                    message = "Selected file is empty.",
+                                    withDismissAction = true
+                                )
                             }
                         } catch (e: Exception) {
-                            Toast.makeText(context, "Error reading file: ${e.message}", Toast.LENGTH_LONG).show()
+                            snackbarHostState.showSnackbar(
+                                message = "Error reading file: ${e.message}",
+                                withDismissAction = true
+                            )
+                        } finally {
+                            isParsing = false
                         }
                     }
                 }
@@ -182,20 +202,42 @@ fun ImportScreen(
 
     fun parseAndGoToMapping() {
         if (rawText.isBlank()) {
-            Toast.makeText(context, "Please enter or select TSV/CSV content first.", Toast.LENGTH_SHORT).show()
+            scope.launch {
+                snackbarHostState.showSnackbar(
+                    message = "Please enter or select TSV/CSV content first.",
+                    withDismissAction = true
+                )
+            }
             return
         }
 
-        val table = TsvCsvImportService.parseRawTable(
-            content = rawText,
-            specifiedDelimiter = selectedDelimiter,
-            userSpecifiedHasHeader = hasHeaderRow
-        )
-        parsedTable = table
-        columnMappings.clear()
-        columnMappings.addAll(table.suggestedMappings)
-
-        currentStep = 1
+        scope.launch {
+            isParsing = true
+            try {
+                val table = TsvCsvImportService.parseRawTable(
+                    content = rawText,
+                    specifiedDelimiter = selectedDelimiter,
+                    userSpecifiedHasHeader = hasHeaderRow
+                )
+                parsedTable = table
+                columnMappings.clear()
+                columnMappings.addAll(table.suggestedMappings)
+                currentStep = 1
+                val totalRows = table.rawRows.size
+                val msg = String.format(Locale.getDefault(), strings.parsingSuccessSnackbar, totalRows)
+                snackbarHostState.showSnackbar(
+                    message = msg,
+                    withDismissAction = true
+                )
+            } catch (e: Exception) {
+                snackbarHostState.showSnackbar(
+                    message = "Failed to parse content: ${e.message}",
+                    withDismissAction = true
+                )
+            } finally {
+                isParsing = false
+            }
+        }
     }
 
     fun generatePreviewAndProceed() {
@@ -210,6 +252,20 @@ fun ImportScreen(
     }
 
     Scaffold(
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState,
+                snackbar = { data ->
+                    Snackbar(
+                        snackbarData = data,
+                        shape = RoundedCornerShape(12.dp),
+                        containerColor = MaterialTheme.colorScheme.inverseSurface,
+                        contentColor = MaterialTheme.colorScheme.inverseOnSurface,
+                        dismissActionContentColor = MaterialTheme.colorScheme.primary
+                    )
+                }
+            )
+        },
         topBar = {
             TopAppBar(
                 title = {
@@ -251,6 +307,42 @@ fun ImportScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            // Animated parsing loading indicator
+            AnimatedVisibility(visible = isParsing) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f))
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = strings.parsingFileProgress,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(14.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    LinearProgressIndicator(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(4.dp)
+                            .clip(RoundedCornerShape(2.dp)),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                    )
+                }
+            }
             // Stepper Tabs
             ImportStepperHeader(
                 currentStep = currentStep,
@@ -281,6 +373,7 @@ fun ImportScreen(
                         onHasHeaderRowChanged = { hasHeaderRow = it },
                         defaultType = defaultTransactionType,
                         onDefaultTypeChanged = { defaultTransactionType = it },
+                        isParsing = isParsing,
                         onPickFileClick = {
                             pickFileSafely()
                         },
@@ -288,7 +381,12 @@ fun ImportScreen(
                             rawText = TsvCsvImportService.SAMPLE_TSV_DATA
                             selectedDelimiter = ImportDelimiter.TAB
                             hasHeaderRow = true
-                            Toast.makeText(context, "Loaded sample TSV data from screenshot", Toast.LENGTH_SHORT).show()
+                            scope.launch {
+                                snackbarHostState.showSnackbar(
+                                    message = "Loaded sample TSV data. Tap 'Proceed to Mapping' or edit format.",
+                                    withDismissAction = true
+                                )
+                            }
                         },
                         onContinueClick = {
                             parseAndGoToMapping()
@@ -542,6 +640,7 @@ fun StepSourceInput(
     onHasHeaderRowChanged: (Boolean) -> Unit,
     defaultType: String,
     onDefaultTypeChanged: (String) -> Unit,
+    isParsing: Boolean = false,
     onPickFileClick: () -> Unit,
     onLoadSampleClick: () -> Unit,
     onContinueClick: () -> Unit
@@ -563,19 +662,29 @@ fun StepSourceInput(
         ) {
             Button(
                 onClick = onPickFileClick,
+                enabled = !isParsing,
                 shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 modifier = Modifier
                     .weight(1f)
                     .height(48.dp)
             ) {
-                Icon(imageVector = Icons.Default.FileUpload, contentDescription = null, modifier = Modifier.size(18.dp))
+                if (isParsing) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp,
+                        color = Color.White
+                    )
+                } else {
+                    Icon(imageVector = Icons.Default.FileUpload, contentDescription = null, modifier = Modifier.size(18.dp))
+                }
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(text = strings.pickFileButton, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
 
             OutlinedButton(
                 onClick = onLoadSampleClick,
+                enabled = !isParsing,
                 shape = RoundedCornerShape(14.dp),
                 modifier = Modifier
                     .weight(1f)
@@ -719,15 +828,25 @@ fun StepSourceInput(
         // Proceed Button
         Button(
             onClick = onContinueClick,
-            enabled = rawText.isNotBlank(),
+            enabled = rawText.isNotBlank() && !isParsing,
             shape = RoundedCornerShape(14.dp),
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp)
         ) {
-            Text(strings.readyToPreview, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.width(8.dp))
-            Icon(imageVector = Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, modifier = Modifier.size(18.dp))
+            if (isParsing) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(strings.parsingFileProgress, fontWeight = FontWeight.Bold)
+            } else {
+                Text(strings.readyToPreview, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.width(8.dp))
+                Icon(imageVector = Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, modifier = Modifier.size(18.dp))
+            }
         }
     }
 }

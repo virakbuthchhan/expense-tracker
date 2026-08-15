@@ -240,7 +240,9 @@ data class AppStrings(
     val importAnother: String,
     val noRecordsToImport: String,
     val importDataAction: String,
-    val importDataSubtitle: String
+    val importDataSubtitle: String,
+    val parsingFileProgress: String,
+    val parsingSuccessSnackbar: String
 )
 
 val EnglishStrings = AppStrings(
@@ -468,7 +470,9 @@ val EnglishStrings = AppStrings(
     importAnother = "Import More Data",
     noRecordsToImport = "No valid records selected to import.",
     importDataAction = "Import TSV / CSV Records",
-    importDataSubtitle = "Import records from Google Sheets, Excel, or CSV/TSV files with column mapping"
+    importDataSubtitle = "Import records from Google Sheets, Excel, or CSV/TSV files with column mapping",
+    parsingFileProgress = "Parsing file data...",
+    parsingSuccessSnackbar = "Successfully parsed %d lines. Ready to map columns."
 )
 
 val KhmerStrings = AppStrings(
@@ -696,7 +700,9 @@ val KhmerStrings = AppStrings(
     importAnother = "នាំចូលទិន្នន័យបន្ថែម",
     noRecordsToImport = "គ្មានកំណត់ត្រាត្រឹមត្រូវដែលបានជ្រើសរើសដើម្បីនាំចូលទេ។",
     importDataAction = "នាំចូលកំណត់ត្រា TSV / CSV",
-    importDataSubtitle = "នាំចូលប្រតិបត្តិការពីតារាង Google Sheets ឬ CSV ដោយផ្គូផ្គងជួរឈរ"
+    importDataSubtitle = "នាំចូលប្រតិបត្តិការពីតារាង Google Sheets ឬ CSV ដោយផ្គូផ្គងជួរឈរ",
+    parsingFileProgress = "កំពុងវិភាគទិន្នន័យឯកសារ...",
+    parsingSuccessSnackbar = "បានវិភាគដោយជោគជ័យ %d ជួរ។ ត្រៀមផ្គូផ្គងជួរឈរ។"
 )
 
 val LocalAppStrings = staticCompositionLocalOf { EnglishStrings }
