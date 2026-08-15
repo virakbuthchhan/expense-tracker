@@ -130,7 +130,7 @@ fun BudgetsScreen(
                                     text = "${(overallProgress * 100).toInt()}% ${strings.spent}",
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (totalSpentOnBudgets > totalBudget) ExpenseRed else Emerald500
+                                    color = if (totalSpentOnBudgets > totalBudget) ExpenseRed else MaterialTheme.colorScheme.primary
                                 )
                             }
 
@@ -151,7 +151,7 @@ fun BudgetsScreen(
                                     .fillMaxWidth()
                                     .height(8.dp)
                                     .clip(RoundedCornerShape(100.dp)),
-                                color = if (totalSpentOnBudgets > totalBudget) ExpenseRed else Emerald500,
+                                color = if (totalSpentOnBudgets > totalBudget) ExpenseRed else MaterialTheme.colorScheme.primary,
                                 trackColor = MaterialTheme.colorScheme.surfaceVariant
                             )
                         }
@@ -218,8 +218,8 @@ fun BudgetsScreen(
                 selectedBudgetForEdit = null
                 showBudgetDialog = true
             },
-            containerColor = Emerald500,
-            contentColor = Color.White,
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
             shape = RoundedCornerShape(18.dp),
             modifier = Modifier
                 .align(Alignment.BottomEnd)
@@ -412,10 +412,10 @@ fun BudgetEditDialog(
                                 onSave(selectedCategoryId, limit)
                             }
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Emerald500),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text(strings.saveBudget, color = Color.White)
+                        Text(strings.saveBudget, color = MaterialTheme.colorScheme.onPrimary)
                     }
                 }
             }

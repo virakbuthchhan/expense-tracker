@@ -48,15 +48,15 @@ val ExpenseRedLight = Color(0xFFFFDAD6)
 val BudgetWarning = Color(0xFFB45309)
 val BudgetWarningLight = Color(0xFFFEF3C7)
 
-// Backward compatible aliases
-val Emerald50 = Color(0xFFFDF8F8)
-val Emerald100 = GeoPrimaryLight
-val Emerald200 = Color(0xFFFFB5A0)
-val Emerald400 = GeoPrimaryDark
-val Emerald500 = GeoPrimary
-val Emerald600 = Color(0xFF783E2D)
-val Emerald700 = Color(0xFF623123)
-val Emerald900 = Color(0xFF3A0B02)
+// Backward compatible aliases - Now actually using Emerald tints
+val Emerald50 = Color(0xFFF0FDF4)
+val Emerald100 = Color(0xFFD1FAE5)
+val Emerald200 = Color(0xFFA7F3D0)
+val Emerald400 = Color(0xFF34D399)
+val Emerald500 = Color(0xFF10B981)
+val Emerald600 = Color(0xFF059669)
+val Emerald700 = Color(0xFF047857)
+val Emerald900 = Color(0xFF064E3B)
 
 val Slate950 = GeoBgDark
 val Slate900 = GeoSurfaceDark

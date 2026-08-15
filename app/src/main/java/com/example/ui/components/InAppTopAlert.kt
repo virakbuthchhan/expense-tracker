@@ -165,8 +165,8 @@ fun TopAlertCard(
 
     val (accentColor, iconBgColor, icon) = when (alert.type) {
         AlertType.SUCCESS -> Triple(
-            Emerald500,
-            Emerald500.copy(alpha = 0.15f),
+            MaterialTheme.colorScheme.primary,
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
             Icons.Default.CheckCircle
         )
         AlertType.INFO -> Triple(

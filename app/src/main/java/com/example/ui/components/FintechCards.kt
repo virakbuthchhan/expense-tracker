@@ -71,13 +71,13 @@ fun HeroBalanceCard(
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
         modifier = modifier
             .fillMaxWidth()
-            .shadow(8.dp, RoundedCornerShape(24.dp), spotColor = Color(0xFF8F4C38).copy(alpha = 0.25f))
+            .shadow(8.dp, RoundedCornerShape(24.dp), spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
             .background(
                 brush = Brush.linearGradient(
                     colors = listOf(
-                        Color(0xFF2E1915),
-                        Color(0xFF45241C),
-                        Color(0xFF1E100D)
+                        MaterialTheme.colorScheme.primary,
+                        MaterialTheme.colorScheme.secondary,
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.85f)
                     )
                 ),
                 shape = RoundedCornerShape(24.dp)
@@ -86,9 +86,8 @@ fun HeroBalanceCard(
                 1.dp,
                 Brush.linearGradient(
                     listOf(
-                        Color(0xFFFFB5A0).copy(alpha = 0.45f),
-                        Color(0xFF8F4C38).copy(alpha = 0.2f),
-                        Color.White.copy(alpha = 0.08f)
+                        MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.3f),
+                        Color.Transparent
                     )
                 ),
                 RoundedCornerShape(24.dp)
@@ -108,13 +107,13 @@ fun HeroBalanceCard(
                 Text(
                     text = strings.totalBalance,
                     style = MaterialTheme.typography.labelMedium,
-                    color = Color.White.copy(alpha = 0.7f)
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
                 )
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(100.dp))
                         .background(
-                            if (isPositive) Emerald500.copy(alpha = 0.2f) else ExpenseRed.copy(
+                            if (isPositive) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else ExpenseRed.copy(
                                 alpha = 0.2f
                             )
                         )
@@ -123,7 +122,7 @@ fun HeroBalanceCard(
                     Text(
                         text = if (isPositive) strings.savingsRate else strings.overBudget,
                         style = MaterialTheme.typography.labelSmall,
-                        color = if (isPositive) Emerald400 else ExpenseRed,
+                        color = if (isPositive) MaterialTheme.colorScheme.primary else ExpenseRed,
                         fontWeight = FontWeight.SemiBold
                     )
                 }
@@ -134,7 +133,7 @@ fun HeroBalanceCard(
             Text(
                 text = "$currencySymbol${String.format(Locale.US, "%,.2f", totalBalance)}",
                 style = MaterialTheme.typography.displayMedium,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onPrimary,
                 fontWeight = FontWeight.Bold
             )
 
@@ -173,7 +172,7 @@ fun HeroBalanceCard(
                             Text(
                                 text = strings.monthlyIncome,
                                 style = MaterialTheme.typography.labelSmall,
-                                color = Color.White.copy(alpha = 0.6f)
+                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f)
                             )
                             Text(
                                 text = "+$currencySymbol${String.format(Locale.US, "%,.0f", monthlyIncome)}",
@@ -213,7 +212,7 @@ fun HeroBalanceCard(
                             Text(
                                 text = strings.monthlyExpense,
                                 style = MaterialTheme.typography.labelSmall,
-                                color = Color.White.copy(alpha = 0.6f)
+                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f)
                             )
                             Text(
                                 text = "-$currencySymbol${String.format(Locale.US, "%,.0f", monthlyExpense)}",

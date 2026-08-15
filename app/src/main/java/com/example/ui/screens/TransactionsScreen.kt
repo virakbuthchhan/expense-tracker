@@ -733,8 +733,8 @@ fun TransactionsScreen(
         // Floating Action Button
         FloatingActionButton(
             onClick = onAddTransactionClick,
-            containerColor = Emerald500,
-            contentColor = Color.White,
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
             shape = RoundedCornerShape(18.dp),
             modifier = Modifier
                 .align(Alignment.BottomEnd)

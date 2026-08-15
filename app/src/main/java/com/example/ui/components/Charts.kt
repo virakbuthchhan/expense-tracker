@@ -379,6 +379,11 @@ fun SpendingTrendBarChart(
                         .fillMaxWidth()
                         .height(160.dp)
                 ) {
+                    val primaryColor = MaterialTheme.colorScheme.primary
+                    val primaryContainerColor = MaterialTheme.colorScheme.primaryContainer
+                    val errorColor = MaterialTheme.colorScheme.error
+                    val errorContainerColor = MaterialTheme.colorScheme.errorContainer
+
                     Canvas(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -413,11 +418,11 @@ fun SpendingTrendBarChart(
 
                             val brush = if (isSelected) {
                                 Brush.verticalGradient(
-                                    colors = listOf(Color(0xFFFFDAD6), ExpenseRed)
+                                    colors = listOf(errorContainerColor, errorColor)
                                 )
                             } else {
                                 Brush.verticalGradient(
-                                    colors = listOf(Color(0xFFFFB5A0), Color(0xFF8F4C38))
+                                    colors = listOf(primaryContainerColor, primaryColor)
                                 )
                             }
 

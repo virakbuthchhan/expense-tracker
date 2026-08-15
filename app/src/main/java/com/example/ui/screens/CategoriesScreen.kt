@@ -142,8 +142,8 @@ fun CategoriesScreen(
         // Floating Action Button
         FloatingActionButton(
             onClick = { showAddCategoryDialog = true },
-            containerColor = Emerald500,
-            contentColor = Color.White,
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
             shape = RoundedCornerShape(18.dp),
             modifier = Modifier
                 .align(Alignment.BottomEnd)
@@ -428,10 +428,10 @@ fun AddCategoryDialog(
                                 onSave(name.trim(), selectedIcon, colorToHex(selectedColor), type)
                             }
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Emerald500),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text(strings.saveCategory, color = Color.White)
+                        Text(strings.saveCategory, color = MaterialTheme.colorScheme.onPrimary)
                     }
                 }
             }

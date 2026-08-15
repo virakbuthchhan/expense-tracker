@@ -608,7 +608,7 @@ fun AddEditTransactionSheet(
                         onClick = { handleSave() },
                         shape = RoundedCornerShape(18.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (type == "expense") Emerald600Color else IncomeGreen
+                            containerColor = MaterialTheme.colorScheme.primary
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
@@ -619,7 +619,7 @@ fun AddEditTransactionSheet(
                             text = if (transactionToEdit != null) strings.updateTransaction else strings.saveTransaction,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = MaterialTheme.colorScheme.onPrimary
                         )
                     }
 
@@ -652,13 +652,13 @@ fun AddEditTransactionSheet(
                                     modifier = Modifier
                                         .size(64.dp)
                                         .clip(CircleShape)
-                                        .background(Emerald500),
+                                        .background(MaterialTheme.colorScheme.primary),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Check,
                                         contentDescription = "Success",
-                                        tint = Color.White,
+                                        tint = MaterialTheme.colorScheme.onPrimary,
                                         modifier = Modifier.size(36.dp)
                                     )
                                 }
@@ -678,4 +678,3 @@ fun AddEditTransactionSheet(
     }
 }
 
-val Emerald600Color = Color(0xFF059669)
