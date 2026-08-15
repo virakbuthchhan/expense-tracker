@@ -137,6 +137,82 @@ class ExpenseRepository(
         expenseDao.deleteAllBudgets()
     }
 
+    suspend fun importTransactions(
+        items: List<com.example.data.service.ImportPreviewItem>
+    ): com.example.data.service.ImportExecutionResult = withContext(Dispatchers.IO) {
+        val selectedItems = items.filter { it.isSelected && it.isValid }
+        if (selectedItems.isEmpty()) {
+            return@withContext com.example.data.service.ImportExecutionResult(0, items.size, 0.0, 0)
+        }
+
+        // Cache existing categories to avoid redundant queries
+        val categoryCache = mutableMapOf<String, Int>()
+        var createdCategories = 0
+
+        // Get default fallback category
+        var defaultExpenseCategory = expenseDao.getCategoryByName("Other Expense")
+        if (defaultExpenseCategory == null) {
+            val count = expenseDao.getCategoryCount()
+            if (count == 0) {
+                initializeDefaultDataIfEmpty()
+                defaultExpenseCategory = expenseDao.getCategoryByName("Other Expense")
+            }
+        }
+        val fallbackExpenseId = defaultExpenseCategory?.id ?: 1
+
+        val transactionsToInsert = mutableListOf<TransactionEntity>()
+        var sumAmount = 0.0
+
+        for (item in selectedItems) {
+            val catName = item.categoryName.trim().ifBlank { "Other Expense" }
+            val cacheKey = catName.lowercase()
+
+            val categoryId = if (categoryCache.containsKey(cacheKey)) {
+                categoryCache[cacheKey]!!
+            } else {
+                val existing = expenseDao.getCategoryByName(catName)
+                if (existing != null) {
+                    categoryCache[cacheKey] = existing.id
+                    existing.id
+                } else {
+                    // Create new category dynamically
+                    val newCatId = expenseDao.insertCategory(
+                        CategoryEntity(
+                            name = catName,
+                            icon = "receipt_long",
+                            colorHex = "#6366F1",
+                            isDefault = false,
+                            type = item.type
+                        )
+                    ).toInt()
+                    createdCategories++
+                    categoryCache[cacheKey] = newCatId
+                    newCatId
+                }
+            }
+
+            transactionsToInsert.add(
+                TransactionEntity(
+                    amount = item.amount,
+                    type = item.type,
+                    categoryId = if (categoryId > 0) categoryId else fallbackExpenseId,
+                    note = item.description,
+                    date = item.date
+                )
+            )
+            sumAmount += item.amount
+        }
+
+        expenseDao.insertTransactions(transactionsToInsert)
+
+        com.example.data.service.ImportExecutionResult(
+            totalImported = transactionsToInsert.size,
+            totalSkipped = items.size - transactionsToInsert.size,
+            totalAmount = sumAmount,
+            createdCategoriesCount = createdCategories
+        )
+    }
+
     fun generateCsvExport(transactions: List<TransactionWithCategory>): String {
         val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
         val sb = StringBuilder()

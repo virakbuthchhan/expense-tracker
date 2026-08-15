@@ -19,11 +19,13 @@ class FakeExpenseDao : ExpenseDao {
   override fun getTransactionsInRange(startDate: Long, endDate: Long): Flow<List<TransactionWithCategory>> = flowOf(emptyList())
   override suspend fun getTransactionById(id: Int): TransactionWithCategory? = null
   override suspend fun insertTransaction(transaction: TransactionEntity): Long = 1L
+  override suspend fun insertTransactions(transactions: List<TransactionEntity>): List<Long> = transactions.map { 1L }
   override suspend fun updateTransaction(transaction: TransactionEntity) {}
   override suspend fun deleteTransaction(transaction: TransactionEntity) {}
   override suspend fun deleteTransactionById(id: Int) {}
   override fun getAllCategories(): Flow<List<CategoryEntity>> = flowOf(emptyList())
   override suspend fun getCategoryById(id: Int): CategoryEntity? = null
+  override suspend fun getCategoryByName(name: String): CategoryEntity? = null
   override suspend fun getCategoryCount(): Int = 0
   override suspend fun insertCategory(category: CategoryEntity): Long = 1L
   override suspend fun insertCategories(categories: List<CategoryEntity>) {}
@@ -70,7 +72,7 @@ class ExampleUnitTest {
     assertTrue(csv.contains("45.50"))
   }
 
-  @Test
+    @Test
   fun testUserPreferencesDefaults() {
     val prefs = com.example.data.local.UserPreferences()
     assertEquals("USD", prefs.currencyCode)
@@ -79,6 +81,30 @@ class ExampleUnitTest {
     assertFalse(prefs.isBiometricEnabled)
     assertEquals("", prefs.appLockPin)
     assertEquals("en", prefs.language)
+    assertEquals("system", prefs.themeMode)
+    assertTrue(prefs.isBudgetAlertsEnabled)
+    assertEquals(80, prefs.budgetAlertThresholdPercent)
+    assertFalse(prefs.isBackupReminderEnabled)
+    assertEquals("weekly", prefs.backupReminderFrequency)
+    assertEquals(0L, prefs.lastExportTimestamp)
+  }
+
+  @Test
+  fun testBackupReminderStrings() {
+    val enStrings = com.example.ui.i18n.getAppStrings("en")
+    assertTrue(enStrings.backupReminderTitle.isNotEmpty())
+    assertTrue(enStrings.backupNotificationTitle.isNotEmpty())
+    val kmStrings = com.example.ui.i18n.getAppStrings("km")
+    assertTrue(kmStrings.backupReminderTitle.isNotEmpty())
+    assertTrue(kmStrings.backupNotificationTitle.isNotEmpty())
+  }
+
+  @Test
+  fun testThemeModeEnumValues() {
+    assertEquals("system", com.example.data.local.ThemeMode.SYSTEM.key)
+    assertEquals("light", com.example.data.local.ThemeMode.LIGHT.key)
+    assertEquals("dark", com.example.data.local.ThemeMode.DARK.key)
+    assertEquals(com.example.data.local.ThemeMode.DARK, com.example.data.local.ThemeMode.fromKey("dark"))
   }
 
   @Test

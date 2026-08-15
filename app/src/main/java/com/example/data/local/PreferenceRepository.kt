@@ -6,15 +6,33 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
+enum class ThemeMode(val key: String) {
+    SYSTEM("system"),
+    LIGHT("light"),
+    DARK("dark");
+
+    companion object {
+        fun fromKey(key: String): ThemeMode {
+            return entries.firstOrNull { it.key.equals(key, ignoreCase = true) } ?: SYSTEM
+        }
+    }
+}
+
 data class UserPreferences(
     val currencyCode: String = "USD",
     val currencySymbol: String = "$",
     val isDarkMode: Boolean = false,
     val isFollowSystemTheme: Boolean = true,
+    val themeMode: String = "system", // "system", "light", "dark"
     val isAppLockEnabled: Boolean = false,
     val isBiometricEnabled: Boolean = false,
     val appLockPin: String = "",
-    val language: String = "en"
+    val language: String = "en",
+    val isBudgetAlertsEnabled: Boolean = true,
+    val budgetAlertThresholdPercent: Int = 80, // Default 80%
+    val isBackupReminderEnabled: Boolean = false,
+    val backupReminderFrequency: String = "weekly", // "daily", "weekly", "biweekly", "monthly"
+    val lastExportTimestamp: Long = 0L
 )
 
 class PreferenceRepository(context: Context) {
@@ -25,15 +43,32 @@ class PreferenceRepository(context: Context) {
     val userPreferences: StateFlow<UserPreferences> = _userPreferences.asStateFlow()
 
     private fun loadPreferences(): UserPreferences {
+        val themeModeStr = prefs.getString("theme_mode", "system") ?: "system"
+        val isFollowSystem = when (themeModeStr) {
+            "light", "dark" -> false
+            else -> prefs.getBoolean("follow_system_theme", true)
+        }
+        val isDark = when (themeModeStr) {
+            "dark" -> true
+            "light" -> false
+            else -> prefs.getBoolean("is_dark_mode", false)
+        }
+
         return UserPreferences(
             currencyCode = prefs.getString("currency_code", "USD") ?: "USD",
             currencySymbol = prefs.getString("currency_symbol", "$") ?: "$",
-            isDarkMode = prefs.getBoolean("is_dark_mode", false),
-            isFollowSystemTheme = prefs.getBoolean("follow_system_theme", true),
+            isDarkMode = isDark,
+            isFollowSystemTheme = isFollowSystem,
+            themeMode = themeModeStr,
             isAppLockEnabled = prefs.getBoolean("is_app_lock_enabled", false),
             isBiometricEnabled = prefs.getBoolean("is_biometric_enabled", false),
             appLockPin = prefs.getString("app_lock_pin", "") ?: "",
-            language = prefs.getString("app_language", "en") ?: "en"
+            language = prefs.getString("app_language", "en") ?: "en",
+            isBudgetAlertsEnabled = prefs.getBoolean("is_budget_alerts_enabled", true),
+            budgetAlertThresholdPercent = prefs.getInt("budget_alert_threshold_percent", 80),
+            isBackupReminderEnabled = prefs.getBoolean("is_backup_reminder_enabled", false),
+            backupReminderFrequency = prefs.getString("backup_reminder_frequency", "weekly") ?: "weekly",
+            lastExportTimestamp = prefs.getLong("last_export_timestamp", 0L)
         )
     }
 
@@ -52,10 +87,68 @@ class PreferenceRepository(context: Context) {
         _userPreferences.value = loadPreferences()
     }
 
-    fun setThemePreference(isDark: Boolean, followSystem: Boolean) {
+    fun setThemeMode(mode: ThemeMode) {
+        val isDark = mode == ThemeMode.DARK
+        val followSystem = mode == ThemeMode.SYSTEM
+
         prefs.edit()
+            .putString("theme_mode", mode.key)
             .putBoolean("is_dark_mode", isDark)
             .putBoolean("follow_system_theme", followSystem)
+            .apply()
+        _userPreferences.value = loadPreferences()
+    }
+
+    fun setThemePreference(isDark: Boolean, followSystem: Boolean) {
+        val modeKey = when {
+            followSystem -> "system"
+            isDark -> "dark"
+            else -> "light"
+        }
+        prefs.edit()
+            .putString("theme_mode", modeKey)
+            .putBoolean("is_dark_mode", isDark)
+            .putBoolean("follow_system_theme", followSystem)
+            .apply()
+        _userPreferences.value = loadPreferences()
+    }
+
+    fun setBudgetAlertsEnabled(enabled: Boolean) {
+        prefs.edit()
+            .putBoolean("is_budget_alerts_enabled", enabled)
+            .apply()
+        _userPreferences.value = loadPreferences()
+    }
+
+    fun setBudgetAlertThreshold(percent: Int) {
+        val clamped = percent.coerceIn(10, 200)
+        prefs.edit()
+            .putInt("budget_alert_threshold_percent", clamped)
+            .apply()
+        _userPreferences.value = loadPreferences()
+    }
+
+    fun setBackupReminderEnabled(enabled: Boolean) {
+        prefs.edit()
+            .putBoolean("is_backup_reminder_enabled", enabled)
+            .apply()
+        _userPreferences.value = loadPreferences()
+    }
+
+    fun setBackupReminderFrequency(frequency: String) {
+        val validFrequency = when (frequency) {
+            "daily", "biweekly", "monthly" -> frequency
+            else -> "weekly"
+        }
+        prefs.edit()
+            .putString("backup_reminder_frequency", validFrequency)
+            .apply()
+        _userPreferences.value = loadPreferences()
+    }
+
+    fun recordExportDone(timestamp: Long = System.currentTimeMillis()) {
+        prefs.edit()
+            .putLong("last_export_timestamp", timestamp)
             .apply()
         _userPreferences.value = loadPreferences()
     }

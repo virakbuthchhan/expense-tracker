@@ -320,6 +320,10 @@ class ExpenseViewModel(application: Application) : AndroidViewModel(application)
             } else {
                 repository.addTransaction(amount, type, categoryId, note, date)
             }
+            // Check budget thresholds and send notification if exceeded
+            if (type == "expense") {
+                com.example.data.service.BudgetNotificationService.checkBudgetsAndNotify(getApplication())
+            }
             onComplete()
         }
     }
@@ -346,6 +350,7 @@ class ExpenseViewModel(application: Application) : AndroidViewModel(application)
     fun setBudget(categoryId: Int, monthlyLimit: Double, month: String = _selectedMonth.value, onComplete: () -> Unit = {}) {
         viewModelScope.launch {
             repository.setBudget(categoryId, monthlyLimit, month)
+            com.example.data.service.BudgetNotificationService.checkBudgetsAndNotify(getApplication())
             onComplete()
         }
     }
@@ -364,8 +369,66 @@ class ExpenseViewModel(application: Application) : AndroidViewModel(application)
         preferenceRepository.setLanguage(languageCode)
     }
 
+    fun setThemeMode(mode: com.example.data.local.ThemeMode) {
+        preferenceRepository.setThemeMode(mode)
+    }
+
     fun setThemePreference(isDark: Boolean, followSystem: Boolean) {
         preferenceRepository.setThemePreference(isDark, followSystem)
+    }
+
+    fun setBudgetAlertsEnabled(enabled: Boolean) {
+        preferenceRepository.setBudgetAlertsEnabled(enabled)
+        if (enabled) {
+            checkBudgetAlertsNow()
+        }
+    }
+
+    fun setBudgetAlertThreshold(percent: Int) {
+        preferenceRepository.setBudgetAlertThreshold(percent)
+        checkBudgetAlertsNow()
+    }
+
+    fun checkBudgetAlertsNow() {
+        viewModelScope.launch {
+            com.example.data.service.BudgetNotificationService.checkBudgetsAndNotify(getApplication())
+        }
+    }
+
+    fun sendTestBudgetNotification(customThreshold: Int? = null) {
+        com.example.data.service.BudgetNotificationService.sendTestNotification(getApplication(), customThreshold)
+    }
+
+    fun setBackupReminderEnabled(enabled: Boolean) {
+        preferenceRepository.setBackupReminderEnabled(enabled)
+        if (enabled) {
+            com.example.data.service.BackupReminderService.schedulePeriodicReminder(getApplication())
+            checkBackupReminderNow()
+        } else {
+            com.example.data.service.BackupReminderService.cancelPeriodicReminder(getApplication())
+        }
+    }
+
+    fun setBackupReminderFrequency(frequency: String) {
+        preferenceRepository.setBackupReminderFrequency(frequency)
+        if (preferenceRepository.userPreferences.value.isBackupReminderEnabled) {
+            com.example.data.service.BackupReminderService.schedulePeriodicReminder(getApplication())
+            checkBackupReminderNow()
+        }
+    }
+
+    fun recordExportDone() {
+        preferenceRepository.recordExportDone()
+    }
+
+    fun checkBackupReminderNow() {
+        viewModelScope.launch {
+            com.example.data.service.BackupReminderService.checkAndNotify(getApplication())
+        }
+    }
+
+    fun sendTestBackupReminder() {
+        com.example.data.service.BackupReminderService.sendTestNotification(getApplication())
     }
 
     fun setAppLock(enabled: Boolean, pin: String) {
@@ -383,6 +446,19 @@ class ExpenseViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             repository.resetAllData()
             onComplete()
+        }
+    }
+
+    fun importTransactions(
+        items: List<com.example.data.service.ImportPreviewItem>,
+        onResult: (com.example.data.service.ImportExecutionResult) -> Unit
+    ) {
+        viewModelScope.launch {
+            val result = repository.importTransactions(items)
+            if (result.totalImported > 0) {
+                com.example.data.service.BudgetNotificationService.checkBudgetsAndNotify(getApplication())
+            }
+            onResult(result)
         }
     }
 

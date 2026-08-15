@@ -1,5 +1,6 @@
 package com.example.ui.navigation
 
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -62,6 +63,7 @@ import com.example.ui.screens.BudgetsScreen
 import com.example.ui.screens.CategoriesScreen
 import com.example.ui.screens.DashboardScreen
 import com.example.ui.screens.ExportScreen
+import com.example.ui.screens.ImportScreen
 import com.example.ui.screens.SettingsScreen
 import com.example.ui.screens.TransactionsScreen
 import com.example.ui.theme.Emerald400
@@ -76,6 +78,7 @@ sealed class Screen(val route: String, val icon: ImageVector) {
     object Settings : Screen("settings", Icons.Default.Settings)
     object Categories : Screen("categories", Icons.Default.Category)
     object Export : Screen("export", Icons.Default.FileDownload)
+    object Import : Screen("import", Icons.Default.FileDownload)
 }
 
 fun Screen.getTitle(strings: AppStrings): String {
@@ -87,6 +90,7 @@ fun Screen.getTitle(strings: AppStrings): String {
         Screen.Settings -> strings.navSettings
         Screen.Categories -> strings.navCategories
         Screen.Export -> strings.navExport
+        Screen.Import -> strings.importTitle
     }
 }
 
@@ -102,12 +106,21 @@ val bottomNavScreens = listOf(
 @Composable
 fun AppNavigation(
     viewModel: ExpenseViewModel,
+    initialDestination: String? = null,
     modifier: Modifier = Modifier
 ) {
     val navController = rememberNavController()
     val isAppLocked by viewModel.isAppLocked.collectAsStateWithLifecycle()
     val preferences by viewModel.userPreferences.collectAsStateWithLifecycle()
     val strings = LocalAppStrings.current
+
+    LaunchedEffect(initialDestination) {
+        if (initialDestination == Screen.Export.route) {
+            navController.navigate(Screen.Export.route) {
+                launchSingleTop = true
+            }
+        }
+    }
 
     var activeTransactionToEdit by remember { mutableStateOf<TransactionWithCategory?>(null) }
     var showAddTransactionSheet by remember { mutableStateOf(false) }
@@ -121,7 +134,7 @@ fun AppNavigation(
     Box(modifier = modifier.fillMaxSize()) {
         Scaffold(
             topBar = {
-                if (!isTopLevelScreen) {
+                if (!isTopLevelScreen && currentRoute != Screen.Import.route) {
                     TopAppBar(
                         title = {
                             Text(
@@ -238,6 +251,9 @@ fun AppNavigation(
                         onEditTransactionClick = { tx ->
                             activeTransactionToEdit = tx
                             showAddTransactionSheet = true
+                        },
+                        onNavigateToImport = {
+                            navController.navigate(Screen.Import.route)
                         }
                     )
                 }
@@ -258,6 +274,9 @@ fun AppNavigation(
                         },
                         onNavigateToExport = {
                             navController.navigate(Screen.Export.route)
+                        },
+                        onNavigateToImport = {
+                            navController.navigate(Screen.Import.route)
                         }
                     )
                 }
@@ -267,7 +286,29 @@ fun AppNavigation(
                 }
 
                 composable(Screen.Export.route) {
-                    ExportScreen(viewModel = viewModel)
+                    ExportScreen(
+                        viewModel = viewModel,
+                        onNavigateToImport = {
+                            navController.navigate(Screen.Import.route)
+                        }
+                    )
+                }
+
+                composable(Screen.Import.route) {
+                    ImportScreen(
+                        viewModel = viewModel,
+                        onNavigateBack = { navController.popBackStack() },
+                        onNavigateToTransactions = {
+                            navController.navigate(Screen.Transactions.route) {
+                                popUpTo(Screen.Dashboard.route)
+                            }
+                        },
+                        onNavigateToDashboard = {
+                            navController.navigate(Screen.Dashboard.route) {
+                                popUpTo(Screen.Dashboard.route) { inclusive = true }
+                            }
+                        }
+                    )
                 }
             }
         }

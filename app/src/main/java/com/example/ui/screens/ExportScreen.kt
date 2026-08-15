@@ -22,6 +22,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.SaveAlt
@@ -62,11 +65,13 @@ import java.util.Locale
 @Composable
 fun ExportScreen(
     viewModel: ExpenseViewModel,
+    onNavigateToImport: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val strings = LocalAppStrings.current
     val allTransactions by viewModel.allTransactions.collectAsStateWithLifecycle()
+    val preferences by viewModel.userPreferences.collectAsStateWithLifecycle()
     var isGeneratingPdf by remember { mutableStateOf(false) }
 
     // Storage Access Framework (SAF) Create Document Launcher for PDF
@@ -82,6 +87,7 @@ fun ExportScreen(
             ) { success ->
                 isGeneratingPdf = false
                 if (success) {
+                    viewModel.recordExportDone()
                     Toast.makeText(context, strings.pdfExportSuccess, Toast.LENGTH_LONG).show()
                 } else {
                     Toast.makeText(context, strings.pdfExportError, Toast.LENGTH_LONG).show()
@@ -91,6 +97,7 @@ fun ExportScreen(
     }
 
     fun shareExport(content: String, mimeType: String, title: String) {
+        viewModel.recordExportDone()
         val sendIntent: Intent = Intent().apply {
             action = Intent.ACTION_SEND
             putExtra(Intent.EXTRA_TEXT, content)
@@ -106,6 +113,7 @@ fun ExportScreen(
         viewModel.preparePdfForSharing(context, strings) { pdfUri ->
             isGeneratingPdf = false
             if (pdfUri != null) {
+                viewModel.recordExportDone()
                 val shareIntent = PdfExportService.createSharePdfIntent(context, pdfUri, "Financial_Statement.pdf")
                 val chooser = Intent.createChooser(shareIntent, strings.shareOrPrintPdf)
                 chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -159,46 +167,89 @@ fun ExportScreen(
             }
         }
 
-        // Privacy Guarantee Card
+        // Privacy & Backup Status Card
         item {
             Card(
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Row(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .padding(16.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(Emerald500.copy(alpha = 0.15f)),
-                        contentAlignment = Alignment.Center
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Lock,
-                            contentDescription = strings.offlineSecure,
-                            tint = Emerald500,
-                            modifier = Modifier.size(20.dp)
-                        )
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(Emerald500.copy(alpha = 0.15f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Lock,
+                                contentDescription = strings.offlineSecure,
+                                tint = Emerald500,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = strings.offlineSecure,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = strings.exportDescription,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    val lastExportStr = if (preferences.lastExportTimestamp > 0L) {
+                        val formattedDate = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(preferences.lastExportTimestamp))
+                        String.format(strings.lastBackupDate, formattedDate)
+                    } else {
+                        strings.neverExported
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.7f))
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
                         Text(
-                            text = strings.offlineSecure,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = strings.exportDescription,
-                            style = MaterialTheme.typography.bodySmall,
+                            text = lastExportStr,
+                            style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                        if (preferences.isBackupReminderEnabled) {
+                            val freqText = when (preferences.backupReminderFrequency) {
+                                "daily" -> strings.backupFrequencyDaily
+                                "monthly" -> strings.backupFrequencyMonthly
+                                "biweekly" -> strings.backupFrequencyBiweekly
+                                else -> strings.backupFrequencyWeekly
+                            }
+                            Text(
+                                text = "🔔 $freqText",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
                 }
             }
@@ -491,6 +542,74 @@ fun ExportScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(strings.exportJson, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+
+        // Import Shortcut Card
+        item {
+            Card(
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("import_shortcut_card")
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(Emerald500.copy(alpha = 0.15f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.FileUpload,
+                                contentDescription = "Import",
+                                tint = Emerald500,
+                                modifier = Modifier.size(26.dp)
+                            )
+                        }
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = strings.importTitle,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = strings.importSubtitle,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Button(
+                        onClick = onNavigateToImport,
+                        colors = ButtonDefaults.buttonColors(containerColor = Emerald500),
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp)
+                            .testTag("navigate_import_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.FileUpload,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(strings.importDataAction, fontWeight = FontWeight.Bold)
                     }
                 }
             }

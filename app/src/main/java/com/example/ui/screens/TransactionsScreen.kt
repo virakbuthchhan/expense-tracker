@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
@@ -74,6 +75,7 @@ fun TransactionsScreen(
     viewModel: ExpenseViewModel,
     onAddTransactionClick: () -> Unit,
     onEditTransactionClick: (TransactionWithCategory) -> Unit,
+    onNavigateToImport: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val groupedTransactions by viewModel.groupedTransactions.collectAsStateWithLifecycle()
@@ -96,13 +98,30 @@ fun TransactionsScreen(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Title
-            Text(
-                text = strings.transactionsTitle,
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
+            // Title & Import Action
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = strings.transactionsTitle,
+                    style = MaterialTheme.typography.headlineLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+
+                IconButton(
+                    onClick = onNavigateToImport,
+                    modifier = Modifier.testTag("import_transactions_icon_btn")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.FileUpload,
+                        contentDescription = strings.importTitle,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(14.dp))
 
