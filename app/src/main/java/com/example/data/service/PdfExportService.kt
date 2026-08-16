@@ -23,14 +23,15 @@ import java.util.Locale
 
 object PdfExportService {
 
-    private const val PAGE_WIDTH = 595 // Standard A4 width in points (72 DPI)
-    private const val PAGE_HEIGHT = 842 // Standard A4 height in points (72 DPI)
-    private const val MARGIN_X = 36f
-    private const val MARGIN_Y = 36f
+    private const val PAGE_WIDTH = 595 // A4 width
+    private const val PAGE_HEIGHT = 842 // A4 height
+    private const val MARGIN_X = 40f
+    private const val MARGIN_Y = 40f
     private const val USABLE_WIDTH = PAGE_WIDTH - (MARGIN_X * 2)
 
     /**
-     * Transforms Room database transactions into a PDF document and writes directly to an OutputStream.
+     * Transforms transactions into a PDF document.
+     * Uses more robust font handling and pagination to prevent crashes.
      */
     suspend fun generatePdfToStream(
         transactions: List<TransactionWithCategory>,
@@ -45,82 +46,69 @@ object PdfExportService {
             val totalExpense = transactions.filter { it.type == "expense" }.sumOf { it.amount }
             val netBalance = totalIncome - totalExpense
 
-            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-            val timeFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+            val timeFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US)
             val generationDateStr = timeFormat.format(Date())
 
+            // Paints with standard SANS_SERIF typeface for better device compatibility
             val titlePaint = Paint().apply {
-                color = Color.rgb(15, 23, 42) // Slate 900
-                textSize = 18f
-                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                color = Color.rgb(15, 23, 42)
+                textSize = 16f
+                typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
                 isAntiAlias = true
             }
 
             val subtitlePaint = Paint().apply {
-                color = Color.rgb(100, 116, 139) // Slate 500
+                color = Color.rgb(100, 116, 139)
                 textSize = 9f
-                typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+                typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
                 isAntiAlias = true
             }
 
             val headerBgPaint = Paint().apply {
-                color = Color.rgb(16, 185, 129) // Emerald 500
+                color = Color.rgb(16, 185, 129)
                 isAntiAlias = true
             }
 
             val cardBgPaint = Paint().apply {
-                color = Color.rgb(241, 245, 249) // Slate 100
+                color = Color.rgb(248, 250, 252)
                 isAntiAlias = true
             }
 
             val tableHeaderBgPaint = Paint().apply {
-                color = Color.rgb(30, 41, 59) // Slate 800
+                color = Color.rgb(30, 41, 59)
                 isAntiAlias = true
             }
 
             val tableHeaderTxtPaint = Paint().apply {
                 color = Color.WHITE
-                textSize = 9.5f
-                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                textSize = 9f
+                typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
                 isAntiAlias = true
             }
 
-            val rowEvenPaint = Paint().apply {
-                color = Color.WHITE
-                isAntiAlias = true
-            }
-
-            val rowOddPaint = Paint().apply {
-                color = Color.rgb(248, 250, 252) // Slate 50
-                isAntiAlias = true
-            }
-
-            val rowBorderPaint = Paint().apply {
-                color = Color.rgb(226, 232, 240) // Slate 200
-                strokeWidth = 0.5f
-                style = Paint.Style.STROKE
-                isAntiAlias = true
-            }
+            val rowEvenPaint = Paint().apply { color = Color.WHITE }
+            val rowOddPaint = Paint().apply { color = Color.rgb(248, 250, 252) }
 
             val cellTxtPaint = Paint().apply {
-                color = Color.rgb(30, 41, 59)
+                color = Color.rgb(51, 65, 85)
                 textSize = 8.5f
-                typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+                typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
                 isAntiAlias = true
             }
 
             val incomeTxtPaint = Paint().apply {
-                color = Color.rgb(16, 185, 129) // Emerald Green
+                color = Color.rgb(22, 163, 74)
                 textSize = 8.5f
-                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
                 textAlign = Paint.Align.RIGHT
                 isAntiAlias = true
             }
 
             val expenseTxtPaint = Paint().apply {
-                color = Color.rgb(239, 68, 68) // Red
+                color = Color.rgb(220, 38, 38)
                 textSize = 8.5f
-                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
                 textAlign = Paint.Align.RIGHT
                 isAntiAlias = true
             }
@@ -132,275 +120,124 @@ object PdfExportService {
                 isAntiAlias = true
             }
 
-            // Estimate total pages
-            val rowsPerPage = 22
-            val totalPages = if (transactions.isEmpty()) 1 else {
-                val remainingRows = (transactions.size - 14).coerceAtLeast(0)
-                1 + Math.ceil(remainingRows.toDouble() / rowsPerPage).toInt()
-            }
+            // Simple Pagination: First page has summary, fewer items.
+            val firstPageLimit = 18
+            val nextPageLimit = 28
+            val totalRecords = transactions.size
+            val totalPages = if (totalRecords <= firstPageLimit) 1 
+                            else 1 + Math.ceil((totalRecords - firstPageLimit).toDouble() / nextPageLimit).toInt()
 
-            var currentPageNumber = 1
-            var pageInfo = PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, currentPageNumber).create()
-            var page = pdfDocument.startPage(pageInfo)
-            var canvas: Canvas = page.canvas
-
+            var currentPageNum = 1
+            var page = pdfDocument.startPage(PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, currentPageNum).create())
+            var canvas = page.canvas
             var currentY = MARGIN_Y
 
             // --- PAGE 1 HEADER ---
-            // Brand Accent Header Bar
-            val bannerRect = RectF(MARGIN_X, currentY, MARGIN_X + USABLE_WIDTH, currentY + 6f)
-            canvas.drawRoundRect(bannerRect, 3f, 3f, headerBgPaint)
-            currentY += 22f
+            canvas.drawRect(MARGIN_X, currentY, MARGIN_X + USABLE_WIDTH, currentY + 4f, headerBgPaint)
+            currentY += 24f
 
-            // Title and Metadata
-            canvas.drawText("FINANCIAL TRANSACTION STATEMENT", MARGIN_X, currentY, titlePaint)
-            currentY += 12f
-            canvas.drawText("${appStrings.appName} • 100% Offline & Private Financial Record", MARGIN_X, currentY, subtitlePaint)
+            canvas.drawText("FINANCIAL STATEMENT", MARGIN_X, currentY, titlePaint)
+            currentY += 14f
+            canvas.drawText("${appStrings.appName} • ${appStrings.offlineSecure}", MARGIN_X, currentY, subtitlePaint)
 
-            // Right side metadata
-            val metaRightPaint = Paint().apply {
-                color = Color.rgb(71, 85, 105)
-                textSize = 8.5f
-                textAlign = Paint.Align.RIGHT
-                isAntiAlias = true
+            val metaPaint = Paint(subtitlePaint).apply { textAlign = Paint.Align.RIGHT }
+            canvas.drawText("Generated: $generationDateStr", MARGIN_X + USABLE_WIDTH, currentY - 14f, metaPaint)
+            canvas.drawText("Currency: $currencyCode ($currencySymbol)", MARGIN_X + USABLE_WIDTH, currentY, metaPaint)
+            currentY += 24f
+
+            // Summary row
+            val cardW = (USABLE_WIDTH - 15f) / 4f
+            val cardH = 38f
+            
+            fun drawSummary(x: Float, label: String, valStr: String, color: Int) {
+                val rect = RectF(x, currentY, x + cardW, currentY + cardH)
+                canvas.drawRoundRect(rect, 6f, 6f, cardBgPaint)
+                val lp = Paint(subtitlePaint).apply { textSize = 6.5f; textAlign = Paint.Align.CENTER }
+                val vp = Paint(cellTxtPaint).apply { 
+                    textSize = 8.5f
+                    typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+                    this.color = color
+                    textAlign = Paint.Align.CENTER
+                }
+                canvas.drawText(label.uppercase(), x + cardW/2, currentY + 14f, lp)
+                canvas.drawText(valStr, x + cardW/2, currentY + 30f, vp)
             }
-            canvas.drawText("Generated: $generationDateStr", MARGIN_X + USABLE_WIDTH, currentY - 12f, metaRightPaint)
-            canvas.drawText("Currency: $currencyCode ($currencySymbol)", MARGIN_X + USABLE_WIDTH, currentY, metaRightPaint)
+
+            drawSummary(MARGIN_X, appStrings.totalBalance, "$currencySymbol${String.format(Locale.US, "%,.2f", netBalance)}", if(netBalance >= 0) Color.rgb(22, 163, 74) else Color.RED)
+            drawSummary(MARGIN_X + cardW + 5f, appStrings.monthlyIncome, "+$currencySymbol${String.format(Locale.US, "%,.0f", totalIncome)}", Color.rgb(22, 163, 74))
+            drawSummary(MARGIN_X + (cardW + 5f) * 2, appStrings.monthlyExpense, "-$currencySymbol${String.format(Locale.US, "%,.0f", totalExpense)}", Color.RED)
+            drawSummary(MARGIN_X + (cardW + 5f) * 3, "TOTAL RECORDS", "$totalRecords", Color.BLACK)
+
+            currentY += cardH + 28f
+
+            // Table Header
+            fun drawTableHead(c: Canvas, y: Float) {
+                c.drawRect(MARGIN_X, y, MARGIN_X + USABLE_WIDTH, y + 18f, tableHeaderBgPaint)
+                val ty = y + 12f
+                c.drawText("DATE", MARGIN_X + 6f, ty, tableHeaderTxtPaint)
+                c.drawText("CATEGORY", MARGIN_X + 75f, ty, tableHeaderTxtPaint)
+                c.drawText("NOTE", MARGIN_X + 165f, ty, tableHeaderTxtPaint)
+                val amPaint = Paint(tableHeaderTxtPaint).apply { textAlign = Paint.Align.RIGHT }
+                c.drawText("AMOUNT", MARGIN_X + USABLE_WIDTH - 6f, ty, amPaint)
+            }
+
+            drawTableHead(canvas, currentY)
             currentY += 18f
 
-            // --- SUMMARY METRICS CARDS (PAGE 1) ---
-            val cardHeight = 44f
-            val cardGap = 8f
-            val cardWidth = (USABLE_WIDTH - (cardGap * 3)) / 4f
-
-            // Card 1: Balance
-            drawSummaryMetricCard(
-                canvas = canvas,
-                x = MARGIN_X,
-                y = currentY,
-                width = cardWidth,
-                height = cardHeight,
-                title = appStrings.totalBalance,
-                value = "$currencySymbol${String.format(Locale.US, "%,.2f", netBalance)}",
-                valueColor = if (netBalance >= 0) Color.rgb(16, 185, 129) else Color.rgb(239, 68, 68),
-                bgPaint = cardBgPaint
-            )
-
-            // Card 2: Total Income
-            drawSummaryMetricCard(
-                canvas = canvas,
-                x = MARGIN_X + cardWidth + cardGap,
-                y = currentY,
-                width = cardWidth,
-                height = cardHeight,
-                title = appStrings.monthlyIncome,
-                value = "+$currencySymbol${String.format(Locale.US, "%,.2f", totalIncome)}",
-                valueColor = Color.rgb(16, 185, 129),
-                bgPaint = cardBgPaint
-            )
-
-            // Card 3: Total Expenses
-            drawSummaryMetricCard(
-                canvas = canvas,
-                x = MARGIN_X + (cardWidth + cardGap) * 2,
-                y = currentY,
-                width = cardWidth,
-                height = cardHeight,
-                title = appStrings.monthlyExpense,
-                value = "-$currencySymbol${String.format(Locale.US, "%,.2f", totalExpense)}",
-                valueColor = Color.rgb(239, 68, 68),
-                bgPaint = cardBgPaint
-            )
-
-            // Card 4: Total Records
-            drawSummaryMetricCard(
-                canvas = canvas,
-                x = MARGIN_X + (cardWidth + cardGap) * 3,
-                y = currentY,
-                width = cardWidth,
-                height = cardHeight,
-                title = appStrings.totalTransactionsRecorded,
-                value = "${transactions.size} records",
-                valueColor = Color.rgb(30, 41, 59),
-                bgPaint = cardBgPaint
-            )
-
-            currentY += cardHeight + 20f
-
-            // --- TABLE COLUMN WIDTHS ---
-            val colDateW = 75f
-            val colTypeW = 55f
-            val colCatW = 105f
-            val colNoteW = 190f
-            val colAmountW = 98f
-            val rowHeight = 22f
-
-            // Function to draw table header
-            fun drawTableHeader(c: Canvas, y: Float) {
-                val headerRect = RectF(MARGIN_X, y, MARGIN_X + USABLE_WIDTH, y + 20f)
-                c.drawRoundRect(headerRect, 4f, 4f, tableHeaderBgPaint)
-
-                var colX = MARGIN_X + 8f
-                c.drawText(appStrings.date.uppercase(), colX, y + 13.5f, tableHeaderTxtPaint)
-                colX += colDateW
-                c.drawText("TYPE", colX, y + 13.5f, tableHeaderTxtPaint)
-                colX += colTypeW
-                c.drawText(appStrings.category.uppercase(), colX, y + 13.5f, tableHeaderTxtPaint)
-                colX += colCatW
-                c.drawText("NOTE / MERCHANT", colX, y + 13.5f, tableHeaderTxtPaint)
-
-                val amountHeaderPaint = Paint(tableHeaderTxtPaint).apply {
-                    textAlign = Paint.Align.RIGHT
+            // Data Rows
+            transactions.forEachIndexed { index, t ->
+                // Check if current page is full
+                val limit = if (currentPageNum == 1) PAGE_HEIGHT - 60f else PAGE_HEIGHT - 60f
+                if (currentY > limit) {
+                    // Footer before switching
+                    canvas.drawText("Page $currentPageNum of $totalPages", PAGE_WIDTH/2f, PAGE_HEIGHT - 20f, footerTxtPaint)
+                    pdfDocument.finishPage(page)
+                    
+                    currentPageNum++
+                    page = pdfDocument.startPage(PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, currentPageNum).create())
+                    canvas = page.canvas
+                    currentY = MARGIN_Y
+                    drawTableHead(canvas, currentY)
+                    currentY += 18f
                 }
-                c.drawText(appStrings.amount.uppercase(), MARGIN_X + USABLE_WIDTH - 8f, y + 13.5f, amountHeaderPaint)
+
+                // Row background
+                val rowRect = RectF(MARGIN_X, currentY, MARGIN_X + USABLE_WIDTH, currentY + 20f)
+                canvas.drawRect(rowRect, if (index % 2 == 0) rowEvenPaint else rowOddPaint)
+                
+                val ry = currentY + 13.5f
+                canvas.drawText(dateFormat.format(Date(t.date)), MARGIN_X + 6f, ry, cellTxtPaint)
+                canvas.drawText(safeTruncate(t.categoryName, 18), MARGIN_X + 75f, ry, cellTxtPaint)
+                canvas.drawText(safeTruncate(if(t.note.isNotBlank()) t.note else "-", 35), MARGIN_X + 165f, ry, cellTxtPaint)
+                
+                val isInc = t.type.equals("income", ignoreCase = true)
+                val amtStr = if(isInc) "+$currencySymbol${String.format(Locale.US, "%,.2f", t.amount)}" 
+                             else "-$currencySymbol${String.format(Locale.US, "%,.2f", t.amount)}"
+                canvas.drawText(amtStr, MARGIN_X + USABLE_WIDTH - 6f, ry, if(isInc) incomeTxtPaint else expenseTxtPaint)
+                
+                currentY += 20f
             }
 
-            drawTableHeader(canvas, currentY)
-            currentY += 20f
-
-            if (transactions.isEmpty()) {
-                currentY += 40f
-                val emptyPaint = Paint().apply {
-                    color = Color.rgb(148, 163, 184)
-                    textSize = 11f
-                    textAlign = Paint.Align.CENTER
-                    isAntiAlias = true
-                }
-                canvas.drawText("No transactions recorded in database.", MARGIN_X + (USABLE_WIDTH / 2f), currentY, emptyPaint)
-            } else {
-                for (i in transactions.indices) {
-                    val t = transactions[i]
-
-                    // Check if we need a new page
-                    if (currentY + rowHeight > PAGE_HEIGHT - 50f) {
-                        // Draw footer on current page
-                        canvas.drawText("Page $currentPageNumber of $totalPages • Generated by ${appStrings.appName} Offline", PAGE_WIDTH / 2f, PAGE_HEIGHT - 20f, footerTxtPaint)
-                        pdfDocument.finishPage(page)
-
-                        // Start new page
-                        currentPageNumber++
-                        pageInfo = PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, currentPageNumber).create()
-                        page = pdfDocument.startPage(pageInfo)
-                        canvas = page.canvas
-                        currentY = MARGIN_Y
-
-                        // Mini header on subsequent pages
-                        canvas.drawText("FINANCIAL TRANSACTION STATEMENT (CONTINUED)", MARGIN_X, currentY + 10f, titlePaint)
-                        canvas.drawText("Generated: $generationDateStr", MARGIN_X + USABLE_WIDTH, currentY + 10f, metaRightPaint)
-                        currentY += 24f
-
-                        drawTableHeader(canvas, currentY)
-                        currentY += 20f
-                    }
-
-                    // Row background
-                    val rowRect = RectF(MARGIN_X, currentY, MARGIN_X + USABLE_WIDTH, currentY + rowHeight)
-                    canvas.drawRect(rowRect, if (i % 2 == 0) rowEvenPaint else rowOddPaint)
-                    canvas.drawRect(rowRect, rowBorderPaint)
-
-                    val textBaseline = currentY + 14f
-                    var colX = MARGIN_X + 8f
-
-                    // 1. Date
-                    val dateText = dateFormat.format(Date(t.date))
-                    canvas.drawText(dateText, colX, textBaseline, cellTxtPaint)
-                    colX += colDateW
-
-                    // 2. Type badge text
-                    val isIncome = t.type.equals("income", ignoreCase = true)
-                    val typeText = if (isIncome) "INCOME" else "EXPENSE"
-                    val typeColorPaint = Paint(cellTxtPaint).apply {
-                        color = if (isIncome) Color.rgb(16, 185, 129) else Color.rgb(239, 68, 68)
-                        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-                        textSize = 7.5f
-                    }
-                    canvas.drawText(typeText, colX, textBaseline, typeColorPaint)
-                    colX += colTypeW
-
-                    // 3. Category
-                    val catName = truncateText(t.categoryName, 18)
-                    canvas.drawText(catName, colX, textBaseline, cellTxtPaint)
-                    colX += colCatW
-
-                    // 4. Note
-                    val noteText = truncateText(if (t.note.isNotBlank()) t.note else "-", 32)
-                    canvas.drawText(noteText, colX, textBaseline, cellTxtPaint)
-
-                    // 5. Amount (aligned right)
-                    val formattedAmount = if (isIncome) {
-                        "+$currencySymbol${String.format(Locale.US, "%,.2f", t.amount)}"
-                    } else {
-                        "-$currencySymbol${String.format(Locale.US, "%,.2f", t.amount)}"
-                    }
-                    canvas.drawText(
-                        formattedAmount,
-                        MARGIN_X + USABLE_WIDTH - 8f,
-                        textBaseline,
-                        if (isIncome) incomeTxtPaint else expenseTxtPaint
-                    )
-
-                    currentY += rowHeight
-                }
-            }
-
-            // Draw footer on last page
-            canvas.drawText("Page $currentPageNumber of $totalPages • Generated by ${appStrings.appName} Offline", PAGE_WIDTH / 2f, PAGE_HEIGHT - 20f, footerTxtPaint)
+            // Final Footer
+            canvas.drawText("Page $currentPageNum of $totalPages • Generated by ${appStrings.appName}", PAGE_WIDTH/2f, PAGE_HEIGHT - 20f, footerTxtPaint)
             pdfDocument.finishPage(page)
 
-            // Write out to stream
             pdfDocument.writeTo(outputStream)
-            outputStream.flush()
+        } catch (t: Throwable) {
+            t.printStackTrace()
+            // Rethrow so the caller's try-catch can handle it and return false
+            throw Exception("PDF Generation failed: ${t.message}")
         } finally {
-            pdfDocument.close()
+            try { pdfDocument.close() } catch (e: Exception) {}
         }
     }
 
-    private fun drawSummaryMetricCard(
-        canvas: Canvas,
-        x: Float,
-        y: Float,
-        width: Float,
-        height: Float,
-        title: String,
-        value: String,
-        valueColor: Int,
-        bgPaint: Paint
-    ) {
-        val rect = RectF(x, y, x + width, y + height)
-        canvas.drawRoundRect(rect, 8f, 8f, bgPaint)
-
-        val borderPaint = Paint().apply {
-            color = Color.rgb(226, 232, 240)
-            strokeWidth = 0.5f
-            style = Paint.Style.STROKE
-            isAntiAlias = true
-        }
-        canvas.drawRoundRect(rect, 8f, 8f, borderPaint)
-
-        val cardTitlePaint = Paint().apply {
-            color = Color.rgb(100, 116, 139)
-            textSize = 7.5f
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
-            isAntiAlias = true
-        }
-
-        val cardValuePaint = Paint().apply {
-            color = valueColor
-            textSize = 10f
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            isAntiAlias = true
-        }
-
-        canvas.drawText(truncateText(title.uppercase(), 16), x + 8f, y + 15f, cardTitlePaint)
-        canvas.drawText(truncateText(value, 15), x + 8f, y + 33f, cardValuePaint)
-    }
-
-    private fun truncateText(text: String, maxChars: Int): String {
-        return if (text.length > maxChars) {
-            text.substring(0, maxChars - 2) + ".."
-        } else {
-            text
-        }
+    /**
+     * Safer string truncation that avoids splitting surrogate pairs or causing NPEs.
+     */
+    private fun safeTruncate(text: String?, maxChars: Int): String {
+        val s = text ?: return "-"
+        return if (s.length > maxChars) s.take(maxChars - 2) + ".." else s
     }
 
     /**
@@ -414,32 +251,20 @@ object PdfExportService {
         appStrings: AppStrings
     ): Uri = withContext(Dispatchers.IO) {
         val exportDir = File(context.cacheDir, "exports")
-        if (!exportDir.exists()) {
-            exportDir.mkdirs()
-        }
+        if (!exportDir.exists()) exportDir.mkdirs()
 
-        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-        val file = File(exportDir, "expense_statement_$timeStamp.pdf")
+        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+        val file = File(exportDir, "kotluy_statement_$timeStamp.pdf")
 
         FileOutputStream(file).use { fos ->
-            generatePdfToStream(
-                transactions = transactions,
-                currencyCode = currencyCode,
-                currencySymbol = currencySymbol,
-                appStrings = appStrings,
-                outputStream = fos
-            )
+            generatePdfToStream(transactions, currencyCode, currencySymbol, appStrings, fos)
         }
 
-        FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.fileprovider",
-            file
-        )
+        FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
     }
 
     /**
-     * Exports Room transactions directly into an existing Uri (e.g. from Storage Access Framework ACTION_CREATE_DOCUMENT).
+     * Exports Room transactions directly into an existing Uri.
      */
     suspend fun exportToStorageUri(
         context: Context,
@@ -450,14 +275,9 @@ object PdfExportService {
         appStrings: AppStrings
     ): Boolean = withContext(Dispatchers.IO) {
         try {
-            context.contentResolver.openOutputStream(targetUri)?.use { outputStream ->
-                generatePdfToStream(
-                    transactions = transactions,
-                    currencyCode = currencyCode,
-                    currencySymbol = currencySymbol,
-                    appStrings = appStrings,
-                    outputStream = outputStream
-                )
+            val os = context.contentResolver.openOutputStream(targetUri) ?: return@withContext false
+            os.use { outputStream ->
+                generatePdfToStream(transactions, currencyCode, currencySymbol, appStrings, outputStream)
             }
             true
         } catch (e: Exception) {
@@ -466,9 +286,6 @@ object PdfExportService {
         }
     }
 
-    /**
-     * Creates an Intent to share or save the generated PDF file.
-     */
     fun createSharePdfIntent(context: Context, pdfUri: Uri, title: String = "Expense Statement PDF"): Intent {
         return Intent(Intent.ACTION_SEND).apply {
             type = "application/pdf"
@@ -478,9 +295,6 @@ object PdfExportService {
         }
     }
 
-    /**
-     * Creates an Intent to view/print the generated PDF file in a PDF reader.
-     */
     fun createViewPdfIntent(pdfUri: Uri): Intent {
         return Intent(Intent.ACTION_VIEW).apply {
             setDataAndType(pdfUri, "application/pdf")

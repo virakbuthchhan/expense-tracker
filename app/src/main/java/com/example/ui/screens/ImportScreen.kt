@@ -572,80 +572,95 @@ fun ImportStepperHeader(
     )
 
     Surface(
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+        color = MaterialTheme.colorScheme.surface,
         modifier = Modifier.fillMaxWidth()
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            stepLabels.forEachIndexed { index, stepLabel ->
-                val isActive = currentStep == index
-                val isCompleted = currentStep > index
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 14.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                stepLabels.forEachIndexed { index, stepLabel ->
+                    val isActive = currentStep == index
+                    val isCompleted = currentStep > index
+                    val isEnabled = index <= currentStep || (index == 1 && true /* some logic */)
 
-                val containerBg = when {
-                    isActive -> MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                    isCompleted -> Emerald500.copy(alpha = 0.12f)
-                    else -> Color.Transparent
-                }
-
-                val contentColor = when {
-                    isActive -> MaterialTheme.colorScheme.primary
-                    isCompleted -> Emerald500
-                    else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                }
-
-                Row(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(containerBg)
-                        .clickable { onStepClick(index) }
-                        .padding(horizontal = 6.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Box(
+                    Column(
                         modifier = Modifier
-                            .size(20.dp)
-                            .clip(CircleShape)
-                            .background(
-                                if (isActive) MaterialTheme.colorScheme.primary
-                                else if (isCompleted) Emerald500
-                                else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.25f)
-                            ),
-                        contentAlignment = Alignment.Center
+                            .weight(1f)
+                            .clickable(enabled = isEnabled) { onStepClick(index) },
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
-                        if (isCompleted) {
-                            Icon(
-                                imageVector = Icons.Default.Check,
-                                contentDescription = "Done",
-                                tint = Color.White,
-                                modifier = Modifier.size(12.dp)
-                            )
-                        } else {
-                            Text(
-                                text = "${index + 1}",
-                                color = Color.White,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold
-                            )
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    when {
+                                        isActive -> MaterialTheme.colorScheme.primary
+                                        isCompleted -> Emerald500
+                                        else -> MaterialTheme.colorScheme.surfaceVariant
+                                    }
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (isCompleted) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = "Done",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            } else {
+                                Text(
+                                    text = "${index + 1}",
+                                    color = if (isActive) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
+                        
+                        Spacer(modifier = Modifier.height(6.dp))
+                        
+                        Text(
+                            text = stepLabel,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = if (isActive) FontWeight.Bold else FontWeight.Medium,
+                            color = when {
+                                isActive -> MaterialTheme.colorScheme.primary
+                                isCompleted -> Emerald500
+                                else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                            },
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = stepLabel,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = if (isActive) FontWeight.Bold else FontWeight.Medium,
-                        color = contentColor,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
+
+                    // Divider between steps
+                    if (index < stepLabels.size - 1) {
+                        Box(
+                            modifier = Modifier
+                                .weight(0.5f)
+                                .height(1.dp)
+                                .padding(bottom = 18.dp) // Align with the circles
+                                .background(
+                                    if (isCompleted) Emerald500.copy(alpha = 0.5f)
+                                    else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+                                )
+                        )
+                    }
                 }
             }
+            HorizontalDivider(
+                modifier = Modifier.fillMaxWidth(),
+                thickness = 0.5.dp,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+            )
         }
     }
 }
@@ -680,50 +695,73 @@ fun StepSourceInput(
         // Quick Action Buttons Row
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Button(
                 onClick = onPickFileClick,
                 enabled = !isParsing,
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
                 modifier = Modifier
-                    .weight(1f)
-                    .height(46.dp)
+                    .weight(1.2f)
+                    .height(52.dp)
             ) {
-                Icon(imageVector = Icons.Default.FileUpload, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(text = strings.pickFileButton, fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.SemiBold)
+                Icon(imageVector = Icons.Default.FileUpload, contentDescription = null, modifier = Modifier.size(20.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = strings.pickFileButton, 
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1, 
+                    overflow = TextOverflow.Ellipsis
+                )
             }
 
-            OutlinedButton(
+            Surface(
                 onClick = onLoadSampleClick,
                 enabled = !isParsing,
-                shape = RoundedCornerShape(14.dp),
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.primary,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
                 modifier = Modifier
                     .weight(1f)
-                    .height(46.dp)
+                    .height(52.dp)
             ) {
-                Icon(imageVector = Icons.Default.TableChart, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(text = strings.loadSampleDataButton, fontSize = 12.5.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.SemiBold)
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(imageVector = Icons.Default.TableChart, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Sample", 
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1
+                    )
+                }
             }
         }
 
         // Format Settings Card
         Card(
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
-                modifier = Modifier.padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // 1. Delimiter selection - Clean header + equal width 4-segment buttons
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                // 1. Delimiter selection
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
@@ -732,39 +770,41 @@ fun StepSourceInput(
                         Text(
                             text = strings.delimiterLabel,
                             style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold,
+                            fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
                         ) {
                             Text(
                                 text = selectedDelimiter.label,
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.5.dp)
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                             )
                         }
                     }
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         ImportDelimiter.values().forEach { delimiter ->
                             val isSelected = selectedDelimiter == delimiter
                             Surface(
+                                onClick = { onDelimiterSelected(delimiter) },
+                                shape = RoundedCornerShape(12.dp),
+                                color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surface,
+                                contentColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                border = BorderStroke(
+                                    width = if (isSelected) 1.5.dp else 1.dp,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+                                ),
                                 modifier = Modifier
                                     .weight(1f)
-                                    .height(36.dp)
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .clickable { onDelimiterSelected(delimiter) },
-                                shape = RoundedCornerShape(10.dp),
-                                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
-                                border = if (isSelected) BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary)
-                                         else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                                    .height(38.dp)
                             ) {
                                 Box(
                                     contentAlignment = Alignment.Center,
@@ -773,13 +813,12 @@ fun StepSourceInput(
                                     Text(
                                         text = when (delimiter) {
                                             ImportDelimiter.TAB -> "Tab"
-                                            ImportDelimiter.COMMA -> "Comma (,)"
-                                            ImportDelimiter.SEMICOLON -> "Semi (;)"
-                                            ImportDelimiter.PIPE -> "Pipe (|)"
+                                            ImportDelimiter.COMMA -> "Comma"
+                                            ImportDelimiter.SEMICOLON -> "Semi"
+                                            ImportDelimiter.PIPE -> "Pipe"
                                         },
-                                        fontSize = 11.sp,
+                                        fontSize = 11.5.sp,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                        color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
@@ -791,7 +830,7 @@ fun StepSourceInput(
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
 
-                // 2. Toggle Header Row with authentic high-contrast Switch design
+                // 2. Toggle Header Row
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -801,7 +840,7 @@ fun StepSourceInput(
                         Text(
                             text = strings.hasHeaderLabel,
                             style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold,
+                            fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
@@ -814,22 +853,9 @@ fun StepSourceInput(
                     Switch(
                         checked = hasHeaderRow,
                         onCheckedChange = onHasHeaderRowChanged,
-                        thumbContent = if (hasHeaderRow) {
-                            {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(SwitchDefaults.IconSize),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        } else null,
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = Color.White,
-                            checkedTrackColor = MaterialTheme.colorScheme.primary,
-                            uncheckedThumbColor = MaterialTheme.colorScheme.outline,
-                            uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
-                            uncheckedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                            checkedTrackColor = MaterialTheme.colorScheme.primary
                         )
                     )
                 }
@@ -846,7 +872,7 @@ fun StepSourceInput(
                         Text(
                             text = strings.defaultTypeLabel,
                             style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold,
+                            fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
@@ -857,34 +883,45 @@ fun StepSourceInput(
                         )
                     }
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        FilterChip(
-                            selected = defaultType == "expense",
-                            onClick = { onDefaultTypeChanged("expense") },
-                            label = { Text(strings.filterExpense, fontSize = 11.5.sp, fontWeight = if (defaultType == "expense") FontWeight.Bold else FontWeight.Normal) },
-                            shape = RoundedCornerShape(8.dp),
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.8f),
-                                selectedLabelColor = MaterialTheme.colorScheme.onErrorContainer
-                            )
-                        )
-                        FilterChip(
-                            selected = defaultType == "income",
-                            onClick = { onDefaultTypeChanged("income") },
-                            label = { Text(strings.filterIncome, fontSize = 11.5.sp, fontWeight = if (defaultType == "income") FontWeight.Bold else FontWeight.Normal) },
-                            shape = RoundedCornerShape(8.dp),
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = Emerald500.copy(alpha = 0.22f),
-                                selectedLabelColor = Emerald500
-                            )
-                        )
+                    Row(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+                            .padding(2.dp),
+                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        listOf("expense" to strings.filterExpense, "income" to strings.filterIncome).forEach { (type, label) ->
+                            val isSelected = defaultType == type
+                            Surface(
+                                onClick = { onDefaultTypeChanged(type) },
+                                shape = RoundedCornerShape(8.dp),
+                                color = if (isSelected) {
+                                    if (type == "expense") Color(0xFFFEE2E2) else Color(0xFFDCFCE7)
+                                } else Color.Transparent,
+                                contentColor = if (isSelected) {
+                                    if (type == "expense") Color(0xFF991B1B) else Color(0xFF166534)
+                                } else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.height(32.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier.padding(horizontal = 12.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = label,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
 
         // Raw Text Box with Paste & Clear controls
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -893,24 +930,25 @@ fun StepSourceInput(
                 Text(
                     text = strings.pasteTextButton,
                     style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     if (rawText.isNotBlank()) {
                         Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
                         ) {
                             Text(
                                 text = "${rawText.lines().filter { it.isNotBlank() }.size} lines",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.primary,
                                 fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                             )
                         }
 
@@ -919,18 +957,18 @@ fun StepSourceInput(
                                 onRawTextChanged("")
                                 onAlert("Content Cleared", "Input box has been reset", AlertType.INFO)
                             },
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(32.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Clear,
                                 contentDescription = "Clear",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }
 
-                    TextButton(
+                    Surface(
                         onClick = {
                             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
                             if (clipboard != null && clipboard.hasPrimaryClip()) {
@@ -951,11 +989,19 @@ fun StepSourceInput(
                                 onAlert("Clipboard Empty", "No text found on clipboard", AlertType.WARNING)
                             }
                         },
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                        shape = RoundedCornerShape(10.dp),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                        contentColor = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.height(34.dp)
                     ) {
-                        Icon(imageVector = Icons.Default.ContentPaste, contentDescription = null, modifier = Modifier.size(14.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Paste", fontSize = 12.sp)
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(imageVector = Icons.Default.ContentPaste, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Paste", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
             }
@@ -964,13 +1010,21 @@ fun StepSourceInput(
                 value = rawText,
                 onValueChange = onRawTextChanged,
                 placeholder = {
-                    Text(strings.pastePlaceholder, fontSize = 12.5.sp)
+                    Text(
+                        text = strings.pastePlaceholder, 
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                    )
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(180.dp),
-                shape = RoundedCornerShape(14.dp),
-                textStyle = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp)
+                    .height(200.dp),
+                shape = RoundedCornerShape(16.dp),
+                textStyle = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
+                )
             )
         }
 
