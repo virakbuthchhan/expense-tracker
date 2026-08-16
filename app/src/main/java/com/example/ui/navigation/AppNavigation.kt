@@ -102,7 +102,6 @@ val bottomNavScreens = listOf(
     Screen.Dashboard,
     Screen.Transactions,
     Screen.Analytics,
-    Screen.Budgets,
     Screen.Settings
 )
 
@@ -147,6 +146,7 @@ fun AppNavigation(
                                 text = when (currentRoute) {
                                     Screen.Categories.route -> strings.categoriesTitle
                                     Screen.Export.route -> strings.exportTitle
+                                    Screen.Budgets.route -> strings.navBudgets
                                     else -> ""
                                 },
                                 fontWeight = FontWeight.Bold
@@ -290,6 +290,9 @@ fun AppNavigation(
                         viewModel = viewModel,
                         onNavigateToCategories = {
                             navController.navigate(Screen.Categories.route)
+                        },
+                        onNavigateToBudgets = {
+                            navController.navigate(Screen.Budgets.route)
                         },
                         onNavigateToExport = {
                             navController.navigate(Screen.Export.route)

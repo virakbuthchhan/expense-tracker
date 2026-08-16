@@ -45,6 +45,7 @@ import com.example.ui.i18n.LocalAppStrings
 import com.example.ui.theme.BudgetWarning
 import com.example.ui.theme.Emerald400
 import com.example.ui.theme.Emerald500
+import com.example.ui.theme.Emerald600
 import com.example.ui.theme.Emerald900
 import com.example.ui.theme.ExpenseRed
 import com.example.ui.theme.IncomeGreen
@@ -67,37 +68,23 @@ fun HeroBalanceCard(
     val strings = LocalAppStrings.current
 
     Card(
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
         modifier = modifier
             .fillMaxWidth()
-            .shadow(8.dp, RoundedCornerShape(24.dp), spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
-            .background(
-                brush = Brush.linearGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.primary,
-                        MaterialTheme.colorScheme.secondary,
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.85f)
-                    )
-                ),
-                shape = RoundedCornerShape(24.dp)
-            )
             .border(
-                1.dp,
-                Brush.linearGradient(
-                    listOf(
-                        MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.3f),
-                        Color.Transparent
-                    )
-                ),
-                RoundedCornerShape(24.dp)
+                width = 1.2.dp,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.8f),
+                shape = RoundedCornerShape(28.dp)
             )
             .testTag("hero_balance_card")
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(22.dp)
+                .padding(24.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -106,38 +93,38 @@ fun HeroBalanceCard(
             ) {
                 Text(
                     text = strings.totalBalance,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f)
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Medium
                 )
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(100.dp))
                         .background(
-                            if (isPositive) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else ExpenseRed.copy(
-                                alpha = 0.2f
-                            )
+                            if (isPositive) Emerald500.copy(alpha = 0.1f) 
+                            else ExpenseRed.copy(alpha = 0.1f)
                         )
-                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
                     Text(
                         text = if (isPositive) strings.savingsRate else strings.overBudget,
                         style = MaterialTheme.typography.labelSmall,
-                        color = if (isPositive) MaterialTheme.colorScheme.primary else ExpenseRed,
-                        fontWeight = FontWeight.SemiBold
+                        color = if (isPositive) Emerald600 else ExpenseRed,
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             Text(
                 text = "$currencySymbol${String.format(Locale.US, "%,.2f", totalBalance)}",
                 style = MaterialTheme.typography.displayMedium,
-                color = MaterialTheme.colorScheme.onPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Bold
             )
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             // Income & Expense Sub-metrics
             Row(
@@ -148,16 +135,16 @@ fun HeroBalanceCard(
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(Color.White.copy(alpha = 0.06f))
-                        .padding(12.dp)
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
+                        .padding(14.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
                             modifier = Modifier
-                                .size(32.dp)
+                                .size(34.dp)
                                 .clip(CircleShape)
-                                .background(IncomeGreen.copy(alpha = 0.2f)),
+                                .background(IncomeGreen.copy(alpha = 0.12f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
@@ -167,12 +154,13 @@ fun HeroBalanceCard(
                                 modifier = Modifier.size(18.dp)
                             )
                         }
-                        Spacer(modifier = Modifier.width(10.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(
                                 text = strings.monthlyIncome,
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f)
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = FontWeight.Medium
                             )
                             Text(
                                 text = "+$currencySymbol${String.format(Locale.US, "%,.0f", monthlyIncome)}",
@@ -188,16 +176,16 @@ fun HeroBalanceCard(
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(Color.White.copy(alpha = 0.06f))
-                        .padding(12.dp)
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
+                        .padding(14.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
                             modifier = Modifier
-                                .size(32.dp)
+                                .size(34.dp)
                                 .clip(CircleShape)
-                                .background(ExpenseRed.copy(alpha = 0.2f)),
+                                .background(ExpenseRed.copy(alpha = 0.12f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
@@ -207,12 +195,13 @@ fun HeroBalanceCard(
                                 modifier = Modifier.size(18.dp)
                             )
                         }
-                        Spacer(modifier = Modifier.width(10.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(
                                 text = strings.monthlyExpense,
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f)
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = FontWeight.Medium
                             )
                             Text(
                                 text = "-$currencySymbol${String.format(Locale.US, "%,.0f", monthlyExpense)}",

@@ -42,6 +42,7 @@ import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Savings
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.AlertDialog
@@ -129,6 +130,7 @@ val availableCurrencies = listOf(
 fun SettingsScreen(
     viewModel: ExpenseViewModel,
     onNavigateToCategories: () -> Unit,
+    onNavigateToBudgets: () -> Unit,
     onNavigateToExport: () -> Unit,
     onNavigateToImport: () -> Unit = {},
     onNavigateToOnboarding: () -> Unit = {},
@@ -348,6 +350,17 @@ fun SettingsScreen(
                 title = strings.manageCategories,
                 subtitle = strings.manageCategoriesSubtitle,
                 onClick = onNavigateToCategories
+            )
+        }
+
+        // Monthly Budgets Card
+        item {
+            SettingsActionCard(
+                icon = Icons.Default.Savings,
+                iconColor = Color(0xFF10B981),
+                title = strings.navBudgets,
+                subtitle = "Set monthly limits & track goals",
+                onClick = onNavigateToBudgets
             )
         }
 
